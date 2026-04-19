@@ -96,6 +96,25 @@ SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = @saved_cs_client;
 
 --
+-- Temporary view structure for view `customerdetails`
+--
+
+DROP TABLE IF EXISTS `customerdetails`;
+/*!50001 DROP VIEW IF EXISTS `customerdetails`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `customerdetails` AS SELECT 
+ 1 AS `user_id`,
+ 1 AS `full_name`,
+ 1 AS `email`,
+ 1 AS `phone_number`,
+ 1 AS `license_number`,
+ 1 AS `expiry_date`,
+ 1 AS `verification_status`,
+ 1 AS `verified_by_employee`*/;
+SET character_set_client = @saved_cs_client;
+
+--
 -- Table structure for table `documents`
 --
 
@@ -106,9 +125,12 @@ CREATE TABLE `documents` (
   `document_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
   `document_type` varchar(50) DEFAULT NULL,
+  `doc_value` varchar(50) DEFAULT NULL,
   `file_path` varchar(255) DEFAULT NULL,
   `verification_status` enum('Pending','Verified','Rejected') DEFAULT 'Pending',
   `expiry_date` date DEFAULT NULL,
+  `verified_by` int DEFAULT NULL,
+  `verified_at` datetime DEFAULT NULL,
   PRIMARY KEY (`document_id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `documents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
@@ -121,7 +143,7 @@ CREATE TABLE `documents` (
 
 LOCK TABLES `documents` WRITE;
 /*!40000 ALTER TABLE `documents` DISABLE KEYS */;
-INSERT INTO `documents` VALUES (1,5,'Driver License','uploads/documents/user5_lic.jpg','Verified','2028-12-31'),(2,6,'ID Card','uploads/documents/user6_id.pdf','Verified','2030-01-15'),(3,7,'Passport','uploads/documents/user7_pass.jpg','Pending','2025-05-20'),(4,8,'Driver License','uploads/documents/user8_lic.jpg','Verified','2029-08-11'),(5,9,'Driver License','uploads/documents/user9_lic.png','Rejected','2023-01-01'),(6,10,'Passport','uploads/documents/user10_pass.pdf','Verified','2032-11-05'),(7,5,'Insurance Doc','uploads/documents/user5_ins.pdf','Verified','2025-06-01'),(8,6,'Utility Bill','uploads/documents/user6_bill.jpg','Pending','2024-08-20'),(9,7,'Driver License','uploads/documents/user7_lic.jpg','Verified','2027-10-10'),(10,8,'ID Card','uploads/documents/user8_id.jpg','Verified','2035-12-12'),(11,5,'Driver License','uploads/dummy_path.png','Pending',NULL),(12,5,'License','uploads\\5-1776587241414.png','Pending',NULL);
+INSERT INTO `documents` VALUES (1,5,'License','PK-LIC-9901','uploads/5-license.png','Verified','2030-12-09',4,'2026-04-10 10:30:00'),(2,6,'License','PK-LIC-8822','uploads/6-license.png','Pending',NULL,NULL,NULL),(3,7,'License','PK-LIC-7733','uploads/7-license.png','Verified',NULL,11,'2026-04-12 14:15:00'),(4,8,'License','PK-LIC-6644','uploads/8-license.png','Rejected',NULL,4,'2026-04-15 09:00:00'),(5,9,'License','PK-LIC-5555','uploads/9-license.png','Pending',NULL,NULL,NULL),(6,10,'License','PK-LIC-4466','uploads/10-license.png','Verified',NULL,11,'2026-04-18 16:45:00'),(7,5,'License','PK-LIC-9901','uploads/5-license.png','Verified','2028-12-31',4,'2026-04-10 10:30:00'),(8,6,'License','PK-LIC-8822','uploads/6-license.png','Pending','2027-05-15',NULL,NULL),(9,7,'License','PK-LIC-7733','uploads/7-license.png','Verified','2029-01-20',11,'2026-04-12 14:15:00'),(10,8,'License','PK-LIC-6644','uploads/8-license.png','Rejected','2025-01-01',4,'2026-04-15 09:00:00'),(11,9,'License','PK-LIC-5555','uploads/9-license.png','Pending','2030-08-10',NULL,NULL),(12,10,'License','PK-LIC-4466','uploads/10-license.png','Verified','2028-03-12',11,'2026-04-18 16:45:00');
 /*!40000 ALTER TABLE `documents` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -260,7 +282,6 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `role` enum('Admin','Employee','Customer') NOT NULL,
   `phone_number` varchar(20) DEFAULT NULL,
-  `license_number` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -272,7 +293,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Syeda Neamah','neamah@driveflow.com','admin','Admin','0300-1112223',NULL),(2,'Pareena Kumari','pareena@driveflow.com','admin','Admin','0300-4445556',NULL),(3,'Aila Naeem','aila@driveflow.com','admin','Admin','0300-7778889',NULL),(4,'Ahmed Khan','ahmed.e@driveflow.com','emp_pass_1','Employee','0312-5556667',NULL),(5,'Sara Ali','sara.customer@gmail.com','123','Customer','0321-9998887','LIC-998877'),(6,'Zain Sheikh','zain.m@yahoo.com','cust_pass_2','Customer','0333-1234567','LIC-112233'),(7,'Hina Fatima','hina.m@outlook.com','cust_pass_3','Customer','0345-7654321','LIC-445566'),(8,'Bilal Sheikh','bilal.s@gmail.com','cust_pass_4','Customer','0311-2223334','LIC-778899'),(9,'Dania Ali','dania@gmail.com','cust_pass_5','Customer','0322-4445556','LIC-334455'),(10,'Omar Mansoor','omar.f@protonmail.com','cust_pass_6','Customer','0301-6667778','LIC-667788'),(12,'Postman Test User','postman@test.com','password123','Customer','0300-9998887','LIC-TEST-001'),(14,'Postman Test User','postman2@test.com','password123','Customer','0300-9998887','LIC-TEST-001');
+INSERT INTO `users` VALUES (1,'Syeda Neamah','neamah@driveflow.com','admin','Admin','0300-1112223'),(2,'Pareena Kumari','pareena@driveflow.com','admin','Admin','0300-4445556'),(3,'Aila Naeem','aila@driveflow.com','admin','Admin','0300-7778889'),(4,'Ahmed Khan','ahmed.e@driveflow.com','emp_pass_1','Employee','0312-5556667'),(5,'Sara Ali','sara.customer@gmail.com','123','Customer','0321-9998887'),(6,'Zain Sheikh','zain.m@yahoo.com','cust_pass_2','Customer','0333-1234567'),(7,'Hina Fatima','hina.m@outlook.com','cust_pass_3','Customer','0345-7654321'),(8,'Bilal Sheikh','bilal.s@gmail.com','cust_pass_4','Customer','0311-2223334'),(9,'Dania Ali','dania@gmail.com','cust_pass_5','Customer','0322-4445556'),(10,'Omar Mansoor','omar.f@protonmail.com','cust_pass_6','Customer','0301-6667778'),(11,'Ameen Rashid','ameen.e@driveflow.com','123','Employee','0300-4582388'),(12,'Postman Test User','postman@test.com','password123','Customer','0300-9998887'),(14,'Postman Test User','postman2@test.com','password123','Customer','0300-9998887');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -375,6 +396,24 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `customerdetails`
+--
+
+/*!50001 DROP VIEW IF EXISTS `customerdetails`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `customerdetails` AS select `u`.`user_id` AS `user_id`,`u`.`full_name` AS `full_name`,`u`.`email` AS `email`,`u`.`phone_number` AS `phone_number`,`d`.`doc_value` AS `license_number`,`d`.`expiry_date` AS `expiry_date`,`d`.`verification_status` AS `verification_status`,(select `users`.`full_name` from `users` where (`users`.`user_id` = `d`.`verified_by`)) AS `verified_by_employee` from (`users` `u` left join `documents` `d` on((`d`.`document_id` = (select max(`documents`.`document_id`) from `documents` where ((`documents`.`user_id` = `u`.`user_id`) and (`documents`.`document_type` = 'License')))))) where (`u`.`role` = 'Customer') */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -385,4 +424,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-19 14:20:32
+-- Dump completed on 2026-04-19 18:25:51

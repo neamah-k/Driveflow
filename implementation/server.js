@@ -160,25 +160,29 @@ app.get('/my-bookings/:user_id', (req, res) => {
     });
 });
 
-// --- UPDATE USER PROFILE ---
-// GET USER PROFILE
+// --- GET USER PROFILE (Using the View) ---
 app.get('/user/:user_id', (req, res) => {
     const userId = req.params.user_id;
-    const sql = "SELECT full_name, email, phone_number, license_number FROM Users WHERE user_id = ?";
+    // We fetch from the VIEW to get the license status and expiry
+    const sql = "SELECT * FROM CustomerDetails WHERE user_id = ?";
+    
     db.query(sql, [userId], (err, results) => {
         if (err) return res.status(500).json(err);
+        if (results.length === 0) return res.status(404).json({ message: "User not found" });
         res.json(results[0]);
     });
 });
 
-// UPDATE USER PROFILE
+// --- UPDATE USER PROFILE ---
 app.put('/user/:id', (req, res) => {
     const userId = req.params.id;
-    const { full_name, phone_number, license_number } = req.body;
-    const sql = "UPDATE Users SET full_name = ?, phone_number = ?, license_number = ? WHERE user_id = ?";
-    db.query(sql, [full_name, phone_number, license_number, userId], (err, result) => {
+    const { full_name, phone_number } = req.body; 
+    
+    const sql = "UPDATE Users SET full_name = ?, phone_number = ? WHERE user_id = ?";
+    
+    db.query(sql, [full_name, phone_number, userId], (err, result) => {
         if (err) return res.status(500).json(err);
-        res.json({ message: "Profile updated!" });
+        res.json({ message: "Profile updated successfully!" });
     });
 });
 
@@ -281,14 +285,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.post('/documents', upload.single('documentFile'), (req, res) => {
-    const { user_id, document_type } = req.body;
-    const file_path = req.file ? req.file.path : null; // This is the real folder path
+    const { user_id, document_type, doc_value, expiry_date } = req.body;
+    const filePath = req.file.path;
 
-    if (!file_path) return res.status(400).json({ message: "No file uploaded" });
-
-    const sql = "INSERT INTO Documents (user_id, document_type, file_path, verification_status) VALUES (?, ?, ?, 'Pending')";
-    
-    db.query(sql, [user_id, document_type, file_path], (err, result) => {
+    const sql = "INSERT INTO Documents (user_id, document_type, doc_value, expiry_date, file_path, verification_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
+    db.query(sql, [user_id, document_type, doc_value, expiry_date, filePath], (err, result) => {
         if (err) return res.status(500).json(err);
         res.json({ message: "File uploaded successfully!", path: file_path });
     });
@@ -306,6 +307,8 @@ app.get('/locations', (req, res) => {
         res.json(results);
     });
 });
+
+
 
 app.use((req, res) => {
     res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });

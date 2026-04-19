@@ -98,25 +98,37 @@
                         <h4 class="mb-4">Identity Verification</h4>
                         <div class="card border-0 shadow-sm col-md-8">
                             <div class="card-body">
-                                <p class="text-muted">Please upload your Driver's License or Passport for verification.</p>
+                                <p class="text-muted">Please provide your details and upload a clear photo of your document for verification.</p>
                                 <form id="docForm">
                                     <div class="mb-3">
-                                        <label class="form-label">Document Type</label>
+                                        <label class="form-label fw-bold small">Document Type</label>
                                         <select id="doc-type" class="form-select" required>
                                             <option value="License">Driving License</option>
                                             <option value="ID">National ID Card</option>
                                             <option value="Passport">Passport</option>
                                         </select>
                                     </div>
+
                                     <div class="mb-3">
-                                        <label class="form-label">Upload File (Image/PDF)</label>
+                                        <label class="form-label fw-bold small">Document Number</label>
+                                        <input type="text" id="doc-value" class="form-control" placeholder="Enter License or ID Number" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Expiry Date</label>
+                                        <input type="date" id="doc-expiry" class="form-control" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Upload File (Image/PDF)</label>
                                         <input type="file" id="doc-file" class="form-control" accept="image/*,.pdf" required>
                                     </div>
-                                    <button type="submit" class="btn btn-dark">Upload Document</button>
+
+                                    <button type="submit" class="btn btn-dark w-100">Submit for Verification</button>
                                 </form>
                             </div>
                         </div>
-                    </div>                    
+                    </div>                
 
                     <div class="tab-pane fade" id="nav-profile" role="tabpanel">
                         <h4 class="mb-4">Profile Settings</h4>
@@ -136,8 +148,17 @@
                                         <input type="text" id="prof-phone" class="form-control" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">License Number</label>
-                                        <input type="text" id="prof-license" class="form-control" required>
+                                        <label class="form-label text-muted small fw-bold">Driving License Information</label>
+                                        <div class="input-group">
+                                            <input type="text" id="prof-license" class="form-control bg-light" placeholder="No license uploaded" readonly>
+                                            <span id="license-status-badge" class="input-group-text small border-start-0">
+                                                Checking...
+                                            </span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-1 px-1">
+                                            <small class="text-muted">Expiry: <span id="prof-expiry" class="fw-bold">N/A</span></small>
+                                            <small id="verified-by-text" class="text-muted italic" style="font-size: 0.75rem;"></small>
+                                        </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary">Save Changes</button>
                                 </form>
@@ -328,46 +349,80 @@
         
         // 6. Load Profile Details from Server
         async function loadProfile() {
-            const res = await fetch(`http://localhost:5000/user/${userData.id}`);
-            if (res.ok) {
+            try {
+                const res = await fetch(`http://localhost:5000/user/${userData.id}`);
                 const user = await res.json();
-                // Fill all fields, including the new email one
-                document.getElementById('prof-email').value = user.email || '';
+
+                // Standard Info
                 document.getElementById('prof-name').value = user.full_name || '';
+                document.getElementById('prof-email').value = user.email || '';
                 document.getElementById('prof-phone').value = user.phone_number || '';
-                document.getElementById('prof-license').value = user.license_number || '';
-            } else {
-                alert("Could not load profile data.");
+                
+                // License Info from View
+                const licInput = document.getElementById('prof-license');
+                const statusBadge = document.getElementById('license-status-badge');
+                const expirySpan = document.getElementById('prof-expiry');
+                const verifyText = document.getElementById('verified-by-text');
+
+                licInput.value = user.license_number || "Not Uploaded";
+                expirySpan.innerText = user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : 'N/A';
+                
+                // Handle Status Styling
+                if (user.verification_status === 'Verified') {
+                    statusBadge.className = 'input-group-text bg-success text-white small';
+                    statusBadge.innerText = 'Verified ✅';
+                    verifyText.innerText = `Verified by: ${user.verified_by_employee || 'System'}`;
+                } else if (user.verification_status === 'Pending') {
+                    statusBadge.className = 'input-group-text bg-warning text-dark small';
+                    statusBadge.innerText = 'Pending ⏳';
+                    verifyText.innerText = 'Awaiting employee review';
+                } else if (user.verification_status === 'Rejected') {
+                    statusBadge.className = 'input-group-text bg-danger text-white small';
+                    statusBadge.innerText = 'Rejected ❌';
+                    verifyText.innerText = 'Please re-upload valid document';
+                } else {
+                    statusBadge.className = 'input-group-text bg-secondary text-white small';
+                    statusBadge.innerText = 'No Document';
+                    verifyText.innerText = '';
+                }
+            } catch (err) {
+                console.error("Error loading profile:", err);
             }
         }
-
         // 7. Handle Profile Updates (Saving changes)
         document.getElementById('profileForm').onsubmit = async (e) => {
             e.preventDefault();
+
+            // We only collect full_name and phone_number now. 
+            // license_number is handled via the Documents table/Employee verification.
             const updatedData = {
                 full_name: document.getElementById('prof-name').value,
-                phone_number: document.getElementById('prof-phone').value,
-                license_number: document.getElementById('prof-license').value
+                phone_number: document.getElementById('prof-phone').value
             };
 
             const res = await fetch(`http://localhost:5000/user/${userData.id}`, {
                 method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedData)
             });
 
             if (res.ok) {
                 alert("Profile updated successfully!");
-                
+
                 // Update local session data so the "Welcome" name updates too
                 userData.name = updatedData.full_name;
                 localStorage.setItem('user', JSON.stringify(userData));
-                document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+                
+                const welcomeElem = document.getElementById('welcomeName');
+                if (welcomeElem) {
+                    welcomeElem.innerText = `Welcome, ${userData.name}`;
+                }
             } else {
-                alert("Failed to update profile.");
+                const errorData = await res.json();
+                alert("Failed to update profile: " + (errorData.message || "Unknown error"));
             }
         };
-
+        
         // 8. Handle Document Uploads
         document.getElementById('docForm').onsubmit = async (e) => {
             e.preventDefault();
@@ -375,24 +430,28 @@
             const fileInput = document.getElementById('doc-file');
             const formData = new FormData();
             
-            // Append the actual file and other details
+            // Collecting all fields for the new Documents schema
             formData.append('user_id', userData.id);
             formData.append('document_type', document.getElementById('doc-type').value);
-            formData.append('documentFile', fileInput.files[0]); // The file itself
+            formData.append('doc_value', document.getElementById('doc-value').value);   // Added this
+            formData.append('expiry_date', document.getElementById('doc-expiry').value); // Added this
+            formData.append('documentFile', fileInput.files[0]);
 
             const res = await fetch('http://localhost:5000/documents', {
                 method: 'POST',
-                body: formData // Note: Do NOT set Content-Type header; browser does it for FormData
+                body: formData 
             });
 
             if (res.ok) {
-                alert("Document uploaded and saved to server storage!");
+                alert("Document submitted! It will appear in your profile once verified.");
                 e.target.reset();
+                // Refresh the profile tab data automatically
+                if(typeof loadProfile === "function") loadProfile(); 
             } else {
-                alert("Upload failed.");
+                const err = await res.json();
+                alert("Upload failed: " + (err.message || "Unknown error"));
             }
         };
-
         // 8. Load locations
         async function loadLocations() {
             try {
