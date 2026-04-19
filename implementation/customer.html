@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriveFlow | Customer Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nav-pills .nav-link.active { background-color: #0d6efd; }
+        .dashboard-container { min-height: 80vh; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-dark shadow">
+        <div class="container">
+            <a class="navbar-brand" href="#">🚗 DriveFlow</a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3" id="welcomeName">Welcome, User</span>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5 dashboard-container">
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist">
+                            <button class="nav-link active mb-2" id="nav-fleet-tab" data-bs-toggle="pill" data-bs-target="#nav-fleet" type="button">Book a Vehicle</button>
+                            <button class="nav-link mb-2" id="nav-trips-tab" data-bs-toggle="pill" data-bs-target="#nav-trips" type="button" onclick="loadMyBookings()">My Trips</button>
+                            <button class="nav-link mb-2" id="nav-invoices-tab" data-bs-toggle="pill" data-bs-target="#nav-invoices" type="button" onclick="loadInvoices()">My Invoices</button>
+                            <button class="nav-link" id="nav-docs-tab" data-bs-toggle="pill" data-bs-target="#nav-docs" type="button">Documents</button>
+                            <button class="nav-link" id="nav-profile-tab" data-bs-toggle="pill" data-bs-target="#nav-profile" type="button" onclick="loadProfile()">Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="tab-content" id="v-pills-tabContent">
+                    
+                    <div class="tab-pane fade show active" id="nav-fleet" role="tabpanel">
+                        <h4 class="mb-4">Available Fleet</h4>
+                        <div class="row mb-4 g-2 bg-white p-3 rounded shadow-sm">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Sort by Price</label>
+                                <select id="sortPrice" class="form-select" onchange="loadFleet()">
+                                    <option value="none">Default</option>
+                                    <option value="low">Price: Low to High</option>
+                                    <option value="high">Price: High to Low</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Filter by Color</label>
+                                <select id="filterColor" class="form-select" onchange="loadFleet()">
+                                    <option value="all">All Colors</option>
+                                    <option value="Black">Black</option>
+                                    <option value="White">White</option>
+                                    <option value="Silver">Silver</option>
+                                    <option value="Red">Red</option>
+                                    <option value="Blue">Blue</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-4" id="fleet-container">
+                            </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="nav-trips" role="tabpanel">
+                        <h4 class="mb-4">Your Booking History</h4>
+                        <div class="table-responsive">
+                            <table class="table table-hover bg-white rounded shadow-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Car</th>
+                                        <th>Locations</th>
+                                        <th>Pickup</th>
+                                        <th>Return</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookings-list">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="nav-invoices" role="tabpanel">
+                        <h4 class="mb-4">Billing & Invoices</h4>
+                        <div id="invoices-list" class="row">
+                            </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="nav-docs" role="tabpanel">
+                        <h4 class="mb-4">Identity Verification</h4>
+                        <div class="card border-0 shadow-sm col-md-8">
+                            <div class="card-body">
+                                <p class="text-muted">Please upload your Driver's License or Passport for verification.</p>
+                                <form id="docForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Document Type</label>
+                                        <select id="doc-type" class="form-select" required>
+                                            <option value="License">Driving License</option>
+                                            <option value="ID">National ID Card</option>
+                                            <option value="Passport">Passport</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload File (Image/PDF)</label>
+                                        <input type="file" id="doc-file" class="form-control" accept="image/*,.pdf" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-dark">Upload Document</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>                    
+
+                    <div class="tab-pane fade" id="nav-profile" role="tabpanel">
+                        <h4 class="mb-4">Profile Settings</h4>
+                        <div class="card border-0 shadow-sm col-md-8">
+                            <div class="card-body">
+                                <form id="profileForm">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small">Email Address (Read-only)</label>
+                                        <input type="email" id="prof-email" class="form-control bg-light" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" id="prof-name" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone Number</label>
+                                        <input type="text" id="prof-phone" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">License Number</label>
+                                        <input type="text" id="prof-license" class="form-control" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="bookingModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalCarName">Book Vehicle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="confirmBookingForm">
+                            <input type="hidden" id="modalVehicleId">
+                            <div class="mb-3">
+                                <label>Pickup Location</label>
+                                <select id="pickupLoc" class="form-select" required>
+                                    <option value="" selected disabled>Select Pickup Location</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label>Dropoff Location</label>
+                                    <select id="dropoffLoc" class="form-select" required>
+                                        <option value="" selected disabled>Select Drop-off Location</option>
+                                    </select>
+                            </div>
+                            <div class="row">
+                                <div class="col"><label>Pickup Date</label><input type="date" id="pDate" class="form-control" required></div>
+                                <div class="col"><label>Return Date</label><input type="date" id="rDate" class="form-control" required></div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success w-100" onclick="submitBooking()">Confirm Reservation</button>
+                    </div>
+                </div>
+            </div>
+        </div>        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // 1. Check Login Status
+        const userData = JSON.parse(localStorage.getItem('user'));
+        if (!userData) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+            // Pre-fill profile form
+            document.getElementById('prof-name').value = userData.name;
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // 2. Load Available Vehicles (Fleet)
+        async function loadFleet() {
+            const sort = document.getElementById('sortPrice').value;
+            const color = document.getElementById('filterColor').value;
+
+            // Notice the change from /vehicles to /fleet
+            const url = `http://localhost:5000/fleet?sort=${sort}&color=${color}`;
+            
+            const res = await fetch(url);
+            const cars = await res.json();
+            const container = document.getElementById('fleet-container');
+            
+            if (!cars || cars.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No cars match these filters.</div>';
+                return;
+            }
+
+            container.innerHTML = cars.map(car => `
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-0">${car.make} ${car.model}</h5>
+                                <span class="badge bg-light text-dark border small">${car.color}</span>
+                            </div>
+                            <p class="text-muted small mb-2">${car.category} | ${car.branch_name}</p>
+                            <p class="text-primary fw-bold mb-0">Rs.${car.daily_rate}/day</p>
+                            <button class="btn btn-sm btn-dark mt-3 w-100" 
+                                onclick="openBookingModal(${car.vehicle_id}, '${car.make} ${car.model}')">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        // 3. Booking Modal Logic
+        function openBookingModal(id, name) {
+            document.getElementById('modalVehicleId').value = id;
+            document.getElementById('modalCarName').innerText = `Book ${name}`;
+            new bootstrap.Modal(document.getElementById('bookingModal')).show();
+        }
+
+        async function submitBooking() {
+            const bookingData = {
+                user_id: userData.id,
+                vehicle_id: document.getElementById('modalVehicleId').value,
+                pickup_location_id: document.getElementById('pickupLoc').value,
+                dropoff_location_id: document.getElementById('dropoffLoc').value,
+                pickup_date: document.getElementById('pDate').value,
+                return_date: document.getElementById('rDate').value
+            };
+
+            const res = await fetch('http://localhost:5000/bookings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(bookingData)
+            });
+
+            if(res.ok) {
+                alert("Booking Successful! Invoice generated.");
+                location.reload();
+            } else {
+                const err = await res.json();
+                alert(err.message);
+            }
+        }
+
+        // 4. Load My Trips
+        async function loadMyBookings() {
+            const res = await fetch(`http://localhost:5000/my-bookings/${userData.id}`);
+            const bookings = await res.json();
+            const list = document.getElementById('bookings-list');
+            
+            if (!bookings || bookings.length === 0 || bookings.message) {
+                list.innerHTML = '<tr><td colspan="5" class="text-center">No trips found.</td></tr>';
+                return;
+            }
+
+            list.innerHTML = bookings.map(b => `
+                <tr>
+                    <td>
+                        <strong>${b.make} ${b.model}</strong><br>
+                        <small class="text-muted">${b.license_plate}</small>
+                    </td>
+                    <td>
+                        <span class="small">From: ${b.pickup_location}</span><br>
+                        <span class="small">To: ${b.dropoff_location}</span>
+                    </td>
+                    <td>${new Date(b.pickup_date).toLocaleDateString()}</td>
+                    <td>${new Date(b.return_date).toLocaleDateString()}</td>
+                    <td><span class="badge ${b.status === 'Pending' ? 'bg-warning text-dark' : 'bg-success'}">${b.status}</span></td>
+                </tr>
+            `).join('');
+        }
+        
+        // 5. Load My Invoices
+        async function loadInvoices() {
+            const res = await fetch(`http://localhost:5000/invoices/${userData.id}`);
+            const invoices = await res.json();
+            const container = document.getElementById('invoices-list');
+            
+            if (!invoices || invoices.length === 0) {
+                container.innerHTML = '<div class="alert alert-info w-100">No invoices generated yet.</div>';
+                return;
+            }
+
+            container.innerHTML = invoices.map(inv => `
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm border-start border-primary border-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="text-muted small">INV #${inv.invoice_id}</h6>
+                                <span class="badge ${inv.payment_status === 'Paid' ? 'bg-success' : 'bg-danger'}">${inv.payment_status}</span>
+                            </div>
+                            <h5 class="card-title">${inv.make} ${inv.model}</h5>
+                            <p class="mb-1 text-primary fw-bold">Total: Rs.${inv.base_amount}</p>
+                            <p class="mb-0 text-muted small">Deposit: Rs.${inv.security_deposit}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 6. Load Profile Details from Server
+        async function loadProfile() {
+            const res = await fetch(`http://localhost:5000/user/${userData.id}`);
+            if (res.ok) {
+                const user = await res.json();
+                // Fill all fields, including the new email one
+                document.getElementById('prof-email').value = user.email || '';
+                document.getElementById('prof-name').value = user.full_name || '';
+                document.getElementById('prof-phone').value = user.phone_number || '';
+                document.getElementById('prof-license').value = user.license_number || '';
+            } else {
+                alert("Could not load profile data.");
+            }
+        }
+
+        // 7. Handle Profile Updates (Saving changes)
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                full_name: document.getElementById('prof-name').value,
+                phone_number: document.getElementById('prof-phone').value,
+                license_number: document.getElementById('prof-license').value
+            };
+
+            const res = await fetch(`http://localhost:5000/user/${userData.id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(updatedData)
+            });
+
+            if (res.ok) {
+                alert("Profile updated successfully!");
+                
+                // Update local session data so the "Welcome" name updates too
+                userData.name = updatedData.full_name;
+                localStorage.setItem('user', JSON.stringify(userData));
+                document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+            } else {
+                alert("Failed to update profile.");
+            }
+        };
+
+        // 8. Handle Document Uploads
+        document.getElementById('docForm').onsubmit = async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('doc-file');
+            const formData = new FormData();
+            
+            // Append the actual file and other details
+            formData.append('user_id', userData.id);
+            formData.append('document_type', document.getElementById('doc-type').value);
+            formData.append('documentFile', fileInput.files[0]); // The file itself
+
+            const res = await fetch('http://localhost:5000/documents', {
+                method: 'POST',
+                body: formData // Note: Do NOT set Content-Type header; browser does it for FormData
+            });
+
+            if (res.ok) {
+                alert("Document uploaded and saved to server storage!");
+                e.target.reset();
+            } else {
+                alert("Upload failed.");
+            }
+        };
+
+        // 8. Load locations
+        async function loadLocations() {
+            try {
+                const res = await fetch('http://localhost:5000/locations');
+                const locations = await res.json();
+                
+                const pickupSelect = document.getElementById('pickupLoc');
+                const dropoffSelect = document.getElementById('dropoffLoc');
+
+                // Reset dropdowns to just the placeholder
+                const placeholder = '<option value="" selected disabled>Select Location</option>';
+                pickupSelect.innerHTML = placeholder;
+                dropoffSelect.innerHTML = placeholder;
+
+                // Loop through database results and add options
+                locations.forEach(loc => {
+                    const option = `<option value="${loc.location_id}">${loc.branch_name}</option>`;
+                    pickupSelect.innerHTML += option;
+                    dropoffSelect.innerHTML += option;
+                });
+            } catch (error) {
+                console.error("Failed to load locations:", error);
+            }
+        }
+
+        // Call this function at the bottom of your script so it runs on page load
+        loadLocations();
+
+        // Initial Load
+        loadFleet();
+    </script>
+</body>
+</html>
