@@ -1,0 +1,143 @@
+DB PROJECT
+-- 1. Users Table
+CREATE TABLE Users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('Admin', 'Employee', 'Customer') NOT NULL,
+    phone_number VARCHAR(20),
+    license_number VARCHAR(50)
+);
+
+-- 2. Locations Table
+CREATE TABLE Locations (
+    location_id INT AUTO_INCREMENT PRIMARY KEY,
+    branch_name VARCHAR(100) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    contact_number VARCHAR(20)
+);
+
+-- 3. Vehicles Table
+CREATE TABLE Vehicles (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    make VARCHAR(50),
+    model VARCHAR(50),
+    year INT,
+    category VARCHAR(50),
+    license_plate VARCHAR(20) UNIQUE,
+    daily_rate DECIMAL(10,2),
+    status ENUM('Available', 'Rented', 'Maintenance', 'Cleaning') DEFAULT 'Available',
+    current_mileage INT,
+    current_location_id INT,
+    FOREIGN KEY (current_location_id) REFERENCES Locations(location_id)
+);
+
+-- 4. Bookings Table
+CREATE TABLE Bookings (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    vehicle_id INT,
+    pickup_location_id INT,
+    dropoff_location_id INT,
+    pickup_date DATETIME NOT NULL,
+    return_date DATETIME NOT NULL,
+    actual_return_date DATETIME,
+    status ENUM('Pending', 'Confirmed', 'Active', 'Completed', 'Cancelled') DEFAULT 'Pending',
+    
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicles(vehicle_id),
+    FOREIGN KEY (pickup_location_id) REFERENCES Locations(location_id),
+    FOREIGN KEY (dropoff_location_id) REFERENCES Locations(location_id)
+);
+
+-- 5. Invoices Table
+CREATE TABLE Invoices (
+    invoice_id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT,
+    base_amount DECIMAL(10,2),
+    late_fees DECIMAL(10,2),
+    security_deposit DECIMAL(10,2),
+    payment_status ENUM('Unpaid', 'Paid') DEFAULT 'Unpaid',
+    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+);
+
+-- 6. Documents Table
+CREATE TABLE Documents (
+    document_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    document_type VARCHAR(50),
+    file_path VARCHAR(255),
+    verification_status ENUM('Pending', 'Verified', 'Rejected') DEFAULT 'Pending',
+    expiry_date DATE,
+    
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+-- 7. Inspections Table
+CREATE TABLE Inspections (
+    inspection_id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT,
+    employee_id INT,
+    inspection_type ENUM('Check-Out', 'Check-In'),
+    fuel_level VARCHAR(20),
+    mileage_reading INT,
+    damage_notes TEXT,
+    inspection_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id),
+    FOREIGN KEY (employee_id) REFERENCES Users(user_id)
+);
+
+-- 8. MaintenanceLogs Table
+CREATE TABLE MaintenanceLogs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT,
+    service_type VARCHAR(100),
+    service_date DATE,
+    cost DECIMAL(10,2),
+    notes TEXT,
+    
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicles(vehicle_id)
+);
+
+
+--9
+CREATE TABLE Users_backup (
+    u_backup_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT, -- not as a foreign key so user data stays even when user is deleted
+    old_full_name VARCHAR(100),
+    old_phone_number VARCHAR(20),
+    old_license_number VARCHAR(50),
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER //
+
+CREATE TRIGGER before_profile_update
+BEFORE UPDATE ON Users
+FOR EACH ROW
+BEGIN
+    -- This ensures we only create a backup if the actual data changed
+    IF (OLD.full_name <> NEW.full_name OR 
+        OLD.phone_number <> NEW.phone_number OR 
+        OLD.license_number <> NEW.license_number) THEN
+        
+        INSERT INTO Users_backup (
+            user_id, 
+            old_full_name, 
+            old_phone_number, 
+            old_license_number
+        )
+        VALUES (
+            OLD.user_id, 
+            OLD.full_name, 
+            OLD.phone_number, 
+            OLD.license_number
+        );
+    END IF;
+END //
+
+DELIMITER ;
