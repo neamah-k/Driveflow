@@ -99,19 +99,21 @@
                         <div class="card border-0 shadow-sm col-md-8">
                             <div class="card-body">
                                 <p class="text-muted">Please provide your details and upload a clear photo of your document for verification.</p>
+                                
                                 <form id="docForm">
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Document Type</label>
-                                        <select id="doc-type" class="form-select" required>
-                                            <option value="License">Driving License</option>
-                                            <option value="ID">National ID Card</option>
+                                        <select id="doc-type" class="form-select" required onchange="toggleLicenseField()">
+                                            <option value="Driving License">Driving License</option>
+                                            <option value="CNIC">National ID Card</option>
                                             <option value="Passport">Passport</option>
                                         </select>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small">Document Number</label>
-                                        <input type="text" id="doc-value" class="form-control" placeholder="Enter License or ID Number" required>
+                                    <!-- Only shown for Driving License -->
+                                    <div class="mb-3" id="license-number-field">
+                                        <label class="form-label fw-bold small">License Number</label>
+                                        <input type="text" id="doc-value" class="form-control" placeholder="Enter your driving license number">
                                     </div>
 
                                     <div class="mb-3">
@@ -213,9 +215,9 @@
         if (!userData) {
             window.location.href = 'login.html';
         } else {
-            document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+            document.getElementById('welcomeName').innerText = `Welcome, ${userData.full_name}`;
             // Pre-fill profile form
-            document.getElementById('prof-name').value = userData.name;
+            document.getElementById('prof-name').value = userData.full_name;
         }
 
         function logout() {
@@ -268,7 +270,7 @@
 
         async function submitBooking() {
             const bookingData = {
-                user_id: userData.id,
+                user_id: userData.user_id,
                 vehicle_id: document.getElementById('modalVehicleId').value,
                 pickup_location_id: document.getElementById('pickupLoc').value,
                 dropoff_location_id: document.getElementById('dropoffLoc').value,
@@ -293,7 +295,7 @@
 
         // 4. Load My Trips
         async function loadMyBookings() {
-            const res = await fetch(`http://localhost:5000/my-bookings/${userData.id}`);
+            const res = await fetch(`http://localhost:5000/my-bookings/${userData.user_id}`);
             const bookings = await res.json();
             const list = document.getElementById('bookings-list');
             
@@ -321,7 +323,7 @@
         
         // 5. Load My Invoices
         async function loadInvoices() {
-            const res = await fetch(`http://localhost:5000/invoices/${userData.id}`);
+            const res = await fetch(`http://localhost:5000/invoices/${userData.user_id}`);
             const invoices = await res.json();
             const container = document.getElementById('invoices-list');
             
@@ -350,24 +352,23 @@
         // 6. Load Profile Details from Server
         async function loadProfile() {
             try {
-                const res = await fetch(`http://localhost:5000/user/${userData.id}`);
+                const res = await fetch(`http://localhost:5000/user/${userData.user_id}`);
                 const user = await res.json();
 
-                // Standard Info
                 document.getElementById('prof-name').value = user.full_name || '';
                 document.getElementById('prof-email').value = user.email || '';
                 document.getElementById('prof-phone').value = user.phone_number || '';
-                
-                // License Info from View
+
                 const licInput = document.getElementById('prof-license');
                 const statusBadge = document.getElementById('license-status-badge');
                 const expirySpan = document.getElementById('prof-expiry');
                 const verifyText = document.getElementById('verified-by-text');
 
-                licInput.value = user.license_number || "Not Uploaded";
-                expirySpan.innerText = user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : 'N/A';
-                
-                // Handle Status Styling
+                licInput.value = user.document_number  || 'Not Provided';
+                expirySpan.innerText = user.expiry_date
+                    ? new Date(user.expiry_date).toLocaleDateString()
+                    : 'N/A';
+
                 if (user.verification_status === 'Verified') {
                     statusBadge.className = 'input-group-text bg-success text-white small';
                     statusBadge.innerText = 'Verified ✅';
@@ -379,11 +380,11 @@
                 } else if (user.verification_status === 'Rejected') {
                     statusBadge.className = 'input-group-text bg-danger text-white small';
                     statusBadge.innerText = 'Rejected ❌';
-                    verifyText.innerText = 'Please re-upload valid document';
+                    verifyText.innerText = 'Please re-upload a valid document';
                 } else {
                     statusBadge.className = 'input-group-text bg-secondary text-white small';
                     statusBadge.innerText = 'No Document';
-                    verifyText.innerText = '';
+                    verifyText.innerText = 'Upload a document for verification';
                 }
             } catch (err) {
                 console.error("Error loading profile:", err);
@@ -400,7 +401,7 @@
                 phone_number: document.getElementById('prof-phone').value
             };
 
-            const res = await fetch(`http://localhost:5000/user/${userData.id}`, {
+            const res = await fetch(`http://localhost:5000/user/${userData.user_id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedData)
@@ -410,12 +411,12 @@
                 alert("Profile updated successfully!");
 
                 // Update local session data so the "Welcome" name updates too
-                userData.name = updatedData.full_name;
+                userData.full_name = updatedData.full_name;
                 localStorage.setItem('user', JSON.stringify(userData));
                 
                 const welcomeElem = document.getElementById('welcomeName');
                 if (welcomeElem) {
-                    welcomeElem.innerText = `Welcome, ${userData.name}`;
+                    welcomeElem.innerText = `Welcome, ${userData.full_name}`;
                 }
             } else {
                 const errorData = await res.json();
@@ -427,31 +428,32 @@
         document.getElementById('docForm').onsubmit = async (e) => {
             e.preventDefault();
 
+            const docType = document.getElementById('doc-type').value;
             const fileInput = document.getElementById('doc-file');
             const formData = new FormData();
-            
-            // Collecting all fields for the new Documents schema
-            formData.append('user_id', userData.id);
-            formData.append('document_type', document.getElementById('doc-type').value);
-            formData.append('doc_value', document.getElementById('doc-value').value);   // Added this
-            formData.append('expiry_date', document.getElementById('doc-expiry').value); // Added this
+
+            formData.append('user_id', userData.user_id);
+            formData.append('document_type', docType);
+            formData.append('document_number', document.getElementById('doc-value').value);
+            formData.append('expiry_date', document.getElementById('doc-expiry').value);
             formData.append('documentFile', fileInput.files[0]);
 
             const res = await fetch('http://localhost:5000/documents', {
                 method: 'POST',
-                body: formData 
+                body: formData
             });
 
             if (res.ok) {
                 alert("Document submitted! It will appear in your profile once verified.");
                 e.target.reset();
-                // Refresh the profile tab data automatically
-                if(typeof loadProfile === "function") loadProfile(); 
+                toggleLicenseField();
+                if (typeof loadProfile === "function") loadProfile();
             } else {
                 const err = await res.json();
                 alert("Upload failed: " + (err.message || "Unknown error"));
             }
         };
+        
         // 8. Load locations
         async function loadLocations() {
             try {
@@ -477,6 +479,15 @@
             }
         }
 
+        // Show license number field only for Driving License
+        function toggleLicenseField() {
+            const docType = document.getElementById('doc-type').value;
+            const licField = document.getElementById('license-number-field');
+            licField.style.display = docType === 'Driving License' ? 'block' : 'none';
+            document.getElementById('doc-value').required = (docType === 'Driving License');
+        }
+        // Run once on load to set initial state
+        toggleLicenseField();
         // Call this function at the bottom of your script so it runs on page load
         loadLocations();
 
