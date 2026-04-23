@@ -160,7 +160,7 @@ app.get('/my-bookings/:user_id', (req, res) => {
 
 // --- USER PROFILE ---
 app.get('/user/:user_id', (req, res) => {
-    const sql = "SELECT * FROM CustomerDetails WHERE user_id = ?";
+    const sql = "SELECT * FROM CustomerDetails WHERE user_id = ? ORDER BY document_id DESC LIMIT 1";
     db.query(sql, [req.params.user_id], (err, results) => {
         if (err) return res.status(500).json(err);
         if (results.length === 0) return res.status(404).json({ message: "User not found" });
@@ -169,10 +169,11 @@ app.get('/user/:user_id', (req, res) => {
 });
 
 // --- UPDATE PROFILE ---
+// AFTER
 app.put('/user/:id', (req, res) => {
-    const { full_name, phone_number } = req.body;
-    const sql = "UPDATE Users SET full_name = ?, phone_number = ? WHERE user_id = ?";
-    db.query(sql, [full_name, phone_number, req.params.id], (err) => {
+    const { full_name, phone_number, license_number } = req.body;
+    const sql = "UPDATE Users SET full_name = ?, phone_number = ?, license_number = ? WHERE user_id = ?";
+    db.query(sql, [full_name, phone_number, license_number ?? null, req.params.id], (err) => {
         if (err) return res.status(500).json(err);
         res.json({ message: "Profile updated successfully!" });
     });
