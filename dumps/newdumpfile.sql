@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `car_rental` /*!40100 DEFAULT CHARACTER SET utf8m
 USE `car_rental`;
 -- MySQL dump 10.13  Distrib 8.0.45, for Win64 (x86_64)
 --
--- Host: localhost    Database: car_rental
+-- Host: 127.0.0.1    Database: car_rental
 -- ------------------------------------------------------
 -- Server version	8.0.45
 
@@ -70,7 +70,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,5,1,1,1,'2024-05-01 10:00:00','2024-05-05 10:00:00',NULL,'Completed'),(2,6,2,2,2,'2024-05-10 12:00:00','2024-05-15 12:00:00',NULL,'Active'),(3,7,3,3,3,'2024-05-20 09:00:00','2024-05-22 09:00:00',NULL,'Confirmed'),(4,8,4,4,1,'2024-05-25 14:00:00','2024-05-28 14:00:00',NULL,'Pending'),(5,9,5,5,5,'2024-06-01 08:00:00','2024-06-03 08:00:00',NULL,'Confirmed'),(6,10,6,6,6,'2024-06-05 11:00:00','2024-06-10 11:00:00',NULL,'Active'),(7,5,7,7,7,'2024-06-12 15:00:00','2024-06-14 15:00:00',NULL,'Cancelled'),(8,6,8,8,8,'2024-06-15 10:00:00','2024-06-16 10:00:00',NULL,'Confirmed'),(9,7,9,9,1,'2024-06-18 13:00:00','2024-06-20 13:00:00',NULL,'Confirmed'),(10,8,10,10,10,'2024-06-22 09:00:00','2024-06-25 09:00:00',NULL,'Confirmed'),(11,9,1,1,2,'2024-07-01 10:00:00','2024-07-03 10:00:00','2024-07-03 11:00:00','Completed'),(12,10,3,3,5,'2024-07-05 09:00:00','2024-07-07 09:00:00',NULL,'Confirmed'),(13,5,8,8,1,'2024-07-08 12:00:00','2024-07-09 12:00:00',NULL,'Pending'),(14,6,9,9,9,'2024-07-10 08:00:00','2024-07-12 08:00:00',NULL,'Active'),(15,7,10,10,4,'2024-07-15 14:00:00','2024-07-18 14:00:00',NULL,'Confirmed'),(17,5,3,2,5,'2026-04-19 00:00:00','2026-04-21 00:00:00',NULL,'Pending');
+INSERT INTO `bookings` VALUES (1,5,1,1,1,'2024-05-01 10:00:00','2024-05-05 10:00:00',NULL,'Completed'),(2,6,2,2,2,'2024-05-10 12:00:00','2024-05-15 12:00:00',NULL,'Active'),(3,7,3,3,3,'2024-05-20 09:00:00','2024-05-22 09:00:00',NULL,'Active'),(4,8,4,4,1,'2024-05-25 14:00:00','2024-05-28 14:00:00',NULL,'Pending'),(5,9,5,5,5,'2024-06-01 08:00:00','2024-06-03 08:00:00',NULL,'Confirmed'),(6,10,6,6,6,'2024-06-05 11:00:00','2024-06-10 11:00:00','2026-04-23 07:06:26','Completed'),(7,5,7,7,7,'2024-06-12 15:00:00','2024-06-14 15:00:00',NULL,'Cancelled'),(8,6,8,8,8,'2024-06-15 10:00:00','2024-06-16 10:00:00',NULL,'Confirmed'),(9,7,9,9,1,'2024-06-18 13:00:00','2024-06-20 13:00:00',NULL,'Confirmed'),(10,8,10,10,10,'2024-06-22 09:00:00','2024-06-25 09:00:00',NULL,'Confirmed'),(11,9,1,1,2,'2024-07-01 10:00:00','2024-07-03 10:00:00','2024-07-03 11:00:00','Completed'),(12,10,3,3,5,'2024-07-05 09:00:00','2024-07-07 09:00:00',NULL,'Confirmed'),(13,5,8,8,1,'2024-07-08 12:00:00','2024-07-09 12:00:00',NULL,'Pending'),(14,6,9,9,9,'2024-07-10 08:00:00','2024-07-12 08:00:00',NULL,'Active'),(15,7,10,10,4,'2024-07-15 14:00:00','2024-07-18 14:00:00',NULL,'Confirmed'),(17,5,3,2,5,'2026-04-19 00:00:00','2026-04-21 00:00:00',NULL,'Pending');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -96,25 +96,6 @@ SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = @saved_cs_client;
 
 --
--- Temporary view structure for view `customerdetails`
---
-
-DROP TABLE IF EXISTS `customerdetails`;
-/*!50001 DROP VIEW IF EXISTS `customerdetails`*/;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `customerdetails` AS SELECT 
- 1 AS `user_id`,
- 1 AS `full_name`,
- 1 AS `email`,
- 1 AS `phone_number`,
- 1 AS `license_number`,
- 1 AS `expiry_date`,
- 1 AS `verification_status`,
- 1 AS `verified_by_employee`*/;
-SET character_set_client = @saved_cs_client;
-
---
 -- Table structure for table `documents`
 --
 
@@ -123,18 +104,19 @@ DROP TABLE IF EXISTS `documents`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `documents` (
   `document_id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int DEFAULT NULL,
+  `user_id` int NOT NULL,
   `document_type` varchar(50) DEFAULT NULL,
-  `doc_value` varchar(50) DEFAULT NULL,
   `file_path` varchar(255) DEFAULT NULL,
   `verification_status` enum('Pending','Verified','Rejected') DEFAULT 'Pending',
   `expiry_date` date DEFAULT NULL,
   `verified_by` int DEFAULT NULL,
   `verified_at` datetime DEFAULT NULL,
   PRIMARY KEY (`document_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `documents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `fk_doc_user` (`user_id`),
+  KEY `fk_doc_employee` (`verified_by`),
+  CONSTRAINT `fk_doc_employee` FOREIGN KEY (`verified_by`) REFERENCES `users` (`user_id`),
+  CONSTRAINT `fk_doc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -143,7 +125,7 @@ CREATE TABLE `documents` (
 
 LOCK TABLES `documents` WRITE;
 /*!40000 ALTER TABLE `documents` DISABLE KEYS */;
-INSERT INTO `documents` VALUES (1,5,'License','PK-LIC-9901','uploads/5-license.png','Verified','2030-12-09',4,'2026-04-10 10:30:00'),(2,6,'License','PK-LIC-8822','uploads/6-license.png','Pending',NULL,NULL,NULL),(3,7,'License','PK-LIC-7733','uploads/7-license.png','Verified',NULL,11,'2026-04-12 14:15:00'),(4,8,'License','PK-LIC-6644','uploads/8-license.png','Rejected',NULL,4,'2026-04-15 09:00:00'),(5,9,'License','PK-LIC-5555','uploads/9-license.png','Pending',NULL,NULL,NULL),(6,10,'License','PK-LIC-4466','uploads/10-license.png','Verified',NULL,11,'2026-04-18 16:45:00'),(7,5,'License','PK-LIC-9901','uploads/5-license.png','Verified','2028-12-31',4,'2026-04-10 10:30:00'),(8,6,'License','PK-LIC-8822','uploads/6-license.png','Pending','2027-05-15',NULL,NULL),(9,7,'License','PK-LIC-7733','uploads/7-license.png','Verified','2029-01-20',11,'2026-04-12 14:15:00'),(10,8,'License','PK-LIC-6644','uploads/8-license.png','Rejected','2025-01-01',4,'2026-04-15 09:00:00'),(11,9,'License','PK-LIC-5555','uploads/9-license.png','Pending','2030-08-10',NULL,NULL),(12,10,'License','PK-LIC-4466','uploads/10-license.png','Verified','2028-03-12',11,'2026-04-18 16:45:00');
+INSERT INTO `documents` VALUES (2,6,'Driving License','uploads/sample.jpg','Verified','2027-12-31',4,'2026-04-23 12:09:09'),(3,6,'CNIC','uploads/sample.jpg','Verified','2030-06-30',4,'2026-04-23 12:10:04'),(4,7,'Driving License','uploads/sample.jpg','Verified','2026-08-15',4,'2026-04-23 12:09:56'),(5,7,'Driving License','uploads/sample.jpg','Verified','2025-01-01',4,'2026-04-23 12:09:52'),(6,8,'Driving License','uploads/sample.jpg','Verified','2028-03-20',4,'2026-04-23 12:09:49');
 /*!40000 ALTER TABLE `documents` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168,7 +150,7 @@ CREATE TABLE `inspections` (
   KEY `employee_id` (`employee_id`),
   CONSTRAINT `inspections_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`),
   CONSTRAINT `inspections_ibfk_2` FOREIGN KEY (`employee_id`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -177,7 +159,7 @@ CREATE TABLE `inspections` (
 
 LOCK TABLES `inspections` WRITE;
 /*!40000 ALTER TABLE `inspections` DISABLE KEYS */;
-INSERT INTO `inspections` VALUES (1,1,4,'Check-Out','Full',15000,'No damage','2026-04-18 11:19:39'),(2,1,4,'Check-In','Half',15400,'Small scratch on bumper','2026-04-18 11:19:39'),(3,2,4,'Check-Out','Full',8000,'Clean interior','2026-04-18 11:19:39'),(4,6,4,'Check-Out','75%',20000,'Tyres slightly worn','2026-04-18 11:19:39'),(5,3,4,'Check-Out','Full',25000,'Perfect condition','2026-04-18 11:19:39'),(6,10,4,'Check-Out','Full',4000,'Brand new smell','2026-04-18 11:19:39'),(7,2,4,'Check-In','Full',8500,'No issues','2026-04-18 11:19:39'),(8,5,4,'Check-Out','50%',5000,'Needs fuel soon','2026-04-18 11:19:39'),(9,9,4,'Check-Out','Full',7500,'No damage','2026-04-18 11:19:39'),(10,8,4,'Check-Out','Full',3000,'Clean','2026-04-18 11:19:39'),(11,11,4,'Check-Out','Full',15500,'Clean','2026-04-18 11:22:32'),(12,11,4,'Check-In','Quarter',15800,'Minor dirt','2026-04-18 11:22:32'),(13,12,4,'Check-Out','Full',26000,'Good condition','2026-04-18 11:22:32'),(14,14,4,'Check-Out','Half',8000,'Fuel low warning','2026-04-18 11:22:32'),(15,15,4,'Check-Out','Full',4500,'No issues','2026-04-18 11:22:32');
+INSERT INTO `inspections` VALUES (1,1,4,'Check-Out','Full',15000,'No damage','2026-04-18 11:19:39'),(2,1,4,'Check-In','Half',15400,'Small scratch on bumper','2026-04-18 11:19:39'),(3,2,4,'Check-Out','Full',8000,'Clean interior','2026-04-18 11:19:39'),(4,6,4,'Check-Out','75%',20000,'Tyres slightly worn','2026-04-18 11:19:39'),(5,3,4,'Check-Out','Full',25000,'Perfect condition','2026-04-18 11:19:39'),(6,10,4,'Check-Out','Full',4000,'Brand new smell','2026-04-18 11:19:39'),(7,2,4,'Check-In','Full',8500,'No issues','2026-04-18 11:19:39'),(8,5,4,'Check-Out','50%',5000,'Needs fuel soon','2026-04-18 11:19:39'),(9,9,4,'Check-Out','Full',7500,'No damage','2026-04-18 11:19:39'),(10,8,4,'Check-Out','Full',3000,'Clean','2026-04-18 11:19:39'),(11,11,4,'Check-Out','Full',15500,'Clean','2026-04-18 11:22:32'),(12,11,4,'Check-In','Quarter',15800,'Minor dirt','2026-04-18 11:22:32'),(13,12,4,'Check-Out','Full',26000,'Good condition','2026-04-18 11:22:32'),(14,14,4,'Check-Out','Half',8000,'Fuel low warning','2026-04-18 11:22:32'),(15,15,4,'Check-Out','Full',4500,'No issues','2026-04-18 11:22:32'),(16,3,4,'Check-Out','3/4',344,'','2026-04-23 12:05:57'),(17,6,4,'Check-In','3/4',4,'','2026-04-23 12:06:26');
 /*!40000 ALTER TABLE `inspections` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -208,7 +190,7 @@ CREATE TABLE `invoices` (
 
 LOCK TABLES `invoices` WRITE;
 /*!40000 ALTER TABLE `invoices` DISABLE KEYS */;
-INSERT INTO `invoices` VALUES (1,1,20000.00,0.00,5000.00,'Paid','2026-04-18 11:13:26'),(2,2,32500.00,1000.00,10000.00,'Paid','2026-04-18 11:13:26'),(3,3,7000.00,0.00,3000.00,'Unpaid','2026-04-18 11:13:26'),(4,4,27000.00,0.00,15000.00,'Unpaid','2026-04-18 11:13:26'),(5,5,19000.00,0.00,8000.00,'Paid','2026-04-18 11:13:26'),(6,6,75000.00,5000.00,20000.00,'Unpaid','2026-04-18 11:13:26'),(7,7,0.00,0.00,0.00,'Unpaid','2026-04-18 11:13:26'),(8,8,2500.00,0.00,2000.00,'Paid','2026-04-18 11:13:26'),(9,9,22000.00,0.00,10000.00,'Paid','2026-04-18 11:13:26'),(10,10,14400.00,0.00,5000.00,'Unpaid','2026-04-18 11:13:26'),(11,11,10000.00,500.00,4000.00,'Paid','2026-04-18 11:21:59'),(12,12,7000.00,0.00,3000.00,'Unpaid','2026-04-18 11:21:59'),(13,13,2500.00,0.00,2000.00,'Unpaid','2026-04-18 11:21:59'),(14,14,22000.00,0.00,10000.00,'Paid','2026-04-18 11:21:59'),(15,15,14400.00,0.00,5000.00,'Unpaid','2026-04-18 11:21:59'),(16,17,7000.00,NULL,500.00,'Unpaid','2026-04-19 13:13:40');
+INSERT INTO `invoices` VALUES (1,1,20000.00,0.00,5000.00,'Paid','2026-04-18 11:13:26'),(2,2,32500.00,1000.00,10000.00,'Paid','2026-04-18 11:13:26'),(3,3,7000.00,0.00,3000.00,'Unpaid','2026-04-18 11:13:26'),(4,4,27000.00,0.00,15000.00,'Unpaid','2026-04-18 11:13:26'),(5,5,19000.00,0.00,8000.00,'Paid','2026-04-18 11:13:26'),(6,6,75000.00,341500.01,20000.00,'Unpaid','2026-04-18 11:13:26'),(7,7,0.00,0.00,0.00,'Unpaid','2026-04-18 11:13:26'),(8,8,2500.00,0.00,2000.00,'Paid','2026-04-18 11:13:26'),(9,9,22000.00,0.00,10000.00,'Paid','2026-04-18 11:13:26'),(10,10,14400.00,0.00,5000.00,'Unpaid','2026-04-18 11:13:26'),(11,11,10000.00,500.00,4000.00,'Paid','2026-04-18 11:21:59'),(12,12,7000.00,0.00,3000.00,'Unpaid','2026-04-18 11:21:59'),(13,13,2500.00,0.00,2000.00,'Unpaid','2026-04-18 11:21:59'),(14,14,22000.00,0.00,10000.00,'Paid','2026-04-18 11:21:59'),(15,15,14400.00,0.00,5000.00,'Paid','2026-04-18 11:21:59'),(16,17,7000.00,NULL,500.00,'Unpaid','2026-04-19 13:13:40');
 /*!40000 ALTER TABLE `invoices` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -225,7 +207,7 @@ CREATE TABLE `locations` (
   `address` varchar(255) NOT NULL,
   `contact_number` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`location_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -234,7 +216,7 @@ CREATE TABLE `locations` (
 
 LOCK TABLES `locations` WRITE;
 /*!40000 ALTER TABLE `locations` DISABLE KEYS */;
-INSERT INTO `locations` VALUES (1,'Downtown Hub','123 Main St, Karachi','021-34567890'),(2,'Airport Terminal 1','Jinnah Int Airport','021-39998887'),(3,'North Nazimabad Branch','Block H, North Nazimabad','021-36665554'),(4,'Clifton Office','Marine Promenade, Clifton','021-32221110'),(5,'Gulshan Base','University Road, Gulshan','021-34443332'),(6,'Defence Hub','Phase 6, DHA','021-35554443'),(7,'Saddar Point','Preedy St, Saddar','021-37776665'),(8,'Malir Station','Malir Cantt Road','021-38887776'),(9,'Bahria Office','Super Highway, Bahria Town','021-31110009'),(10,'Korangi Industrial','Sector 15, KIA','021-30009998');
+INSERT INTO `locations` VALUES (1,'Downtown Hub','123 Main St, Karachi','021-34567890'),(2,'Airport Terminal 1','Jinnah Int Airport','021-39998887'),(3,'North Nazimabad Branch','Block H, North Nazimabad','021-36665554'),(4,'Clifton Office','Marine Promenade, Clifton','021-32221110'),(5,'Gulshan Base','University Road, Gulshan','021-34443332'),(6,'Defence Hub','Phase 6, DHA','021-35554443'),(7,'Saddar Point','Preedy St, Saddar','021-37776665'),(8,'Malir Station','Malir Cantt Road','021-38887776'),(9,'Bahria Office','Super Highway, Bahria Town','021-31110009'),(10,'Korangi Industrial','Sector 15, KIA','021-30009998'),(11,'Karachi Main Branch','Plot 10, Shahrah-e-Faisal, Karachi','021-11122233'),(12,'Lahore Branch','45 MM Alam Road, Gulberg, Lahore','042-33344455'),(13,'Islamabad Branch','Blue Area, Jinnah Avenue, Islamabad','051-55566677');
 /*!40000 ALTER TABLE `locations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -282,6 +264,7 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `role` enum('Admin','Employee','Customer') NOT NULL,
   `phone_number` varchar(20) DEFAULT NULL,
+  `license_number` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -293,7 +276,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Syeda Neamah','neamah@driveflow.com','admin','Admin','0300-1112223'),(2,'Pareena Kumari','pareena@driveflow.com','admin','Admin','0300-4445556'),(3,'Aila Naeem','aila@driveflow.com','admin','Admin','0300-7778889'),(4,'Ahmed Khan','ahmed.e@driveflow.com','emp_pass_1','Employee','0312-5556667'),(5,'Sara Ali','sara.customer@gmail.com','123','Customer','0321-9998887'),(6,'Zain Sheikh','zain.m@yahoo.com','cust_pass_2','Customer','0333-1234567'),(7,'Hina Fatima','hina.m@outlook.com','cust_pass_3','Customer','0345-7654321'),(8,'Bilal Sheikh','bilal.s@gmail.com','cust_pass_4','Customer','0311-2223334'),(9,'Dania Ali','dania@gmail.com','cust_pass_5','Customer','0322-4445556'),(10,'Omar Mansoor','omar.f@protonmail.com','cust_pass_6','Customer','0301-6667778'),(11,'Ameen Rashid','ameen.e@driveflow.com','123','Employee','0300-4582388'),(12,'Postman Test User','postman@test.com','password123','Customer','0300-9998887'),(14,'Postman Test User','postman2@test.com','password123','Customer','0300-9998887');
+INSERT INTO `users` VALUES (1,'Syeda Neamah','neamah@driveflow.com','admin','Admin','0300-1112223',NULL),(2,'Pareena Kumari','pareena@driveflow.com','admin','Admin','0300-4445556',NULL),(3,'Aila Naeem','aila@driveflow.com','admin','Admin','0300-7778889',NULL),(4,'Ahmed Khan','ahmed.e@driveflow.com','emp_pass_1','Employee','0312-5556667',NULL),(5,'Sara Ali','sara.customer@gmail.com','123','Customer','0321-9998887',NULL),(6,'Zain Sheikh','zain.m@yahoo.com','cust_pass_2','Customer','0333-1234567',NULL),(7,'Hina Fatima','hina.m@outlook.com','cust_pass_3','Customer','0345-7654321',NULL),(8,'Bilal Sheikh','bilal.s@gmail.com','cust_pass_4','Customer','0311-2223334',NULL),(9,'Dania Ali','dania@gmail.com','cust_pass_5','Customer','0322-4445556',NULL),(10,'Omar Mansoor','omar.f@protonmail.com','cust_pass_6','Customer','0301-6667778',NULL),(11,'Ameen Rashid','ameen.e@driveflow.com','123','Employee','0300-4582388',NULL),(12,'Postman Test User','postman@test.com','password123','Customer','0300-9998887',NULL),(14,'Postman Test User','postman2@test.com','password123','Customer','0300-9998887',NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -357,7 +340,7 @@ CREATE TABLE `vehicles` (
 
 LOCK TABLES `vehicles` WRITE;
 /*!40000 ALTER TABLE `vehicles` DISABLE KEYS */;
-INSERT INTO `vehicles` VALUES (1,'Toyota','Corolla','Black',2022,'Sedan','ABC-123',5000.00,'Available',15000,1),(2,'Honda','Civic','White',2023,'Sedan','XYZ-789',6500.00,'Rented',8000,2),(3,'Suzuki','Cultus','Red',2021,'Hatchback','LHR-456',3500.00,'Available',25000,3),(4,'Kia','Sportage','Black',2022,'SUV','KHI-001',9000.00,'Maintenance',12000,4),(5,'Hyundai','Tucson','White',2023,'SUV','ISB-002',9500.00,'Available',5000,5),(6,'Toyota','Fortuner','Black',2022,'SUV','PQR-321',15000.00,'Rented',20000,6),(7,'Honda','City','Red',2021,'Sedan','MNO-654',4500.00,'Cleaning',18000,7),(8,'Suzuki','Alto','Black',2023,'Hatchback','STU-987',2500.00,'Available',3000,8),(9,'MG','HS','Black',2022,'SUV','VWX-111',11000.00,'Available',7500,9),(10,'Changan','Alsvin','White',2023,'Sedan','YZA-222',4800.00,'Available',4000,10);
+INSERT INTO `vehicles` VALUES (1,'Toyota','Corolla','Black',2022,'Sedan','ABC-123',5000.00,'Available',15000,1),(2,'Honda','Civic','White',2023,'Sedan','XYZ-789',6500.00,'Rented',8000,2),(3,'Suzuki','Cultus','Red',2021,'Hatchback','LHR-456',3500.00,'Rented',344,3),(4,'Kia','Sportage','Black',2022,'SUV','KHI-001',9000.00,'Maintenance',12000,4),(5,'Hyundai','Tucson','White',2023,'SUV','ISB-002',9500.00,'Available',5000,5),(6,'Toyota','Fortuner','Black',2022,'SUV','PQR-321',15000.00,'Available',4,6),(7,'Honda','City','Red',2021,'Sedan','MNO-654',4500.00,'Cleaning',18000,7),(8,'Suzuki','Alto','Black',2023,'Hatchback','STU-987',2500.00,'Available',3000,8),(9,'MG','HS','Black',2022,'SUV','VWX-111',11000.00,'Available',7500,9),(10,'Changan','Alsvin','White',2023,'Sedan','YZA-222',4800.00,'Available',4000,10);
 /*!40000 ALTER TABLE `vehicles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -396,24 +379,6 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-
---
--- Final view structure for view `customerdetails`
---
-
-/*!50001 DROP VIEW IF EXISTS `customerdetails`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `customerdetails` AS select `u`.`user_id` AS `user_id`,`u`.`full_name` AS `full_name`,`u`.`email` AS `email`,`u`.`phone_number` AS `phone_number`,`d`.`doc_value` AS `license_number`,`d`.`expiry_date` AS `expiry_date`,`d`.`verification_status` AS `verification_status`,(select `users`.`full_name` from `users` where (`users`.`user_id` = `d`.`verified_by`)) AS `verified_by_employee` from (`users` `u` left join `documents` `d` on((`d`.`document_id` = (select max(`documents`.`document_id`) from `documents` where ((`documents`.`user_id` = `u`.`user_id`) and (`documents`.`document_type` = 'License')))))) where (`u`.`role` = 'Customer') */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -424,4 +389,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-19 18:25:51
+-- Dump completed on 2026-04-23 12:46:50
