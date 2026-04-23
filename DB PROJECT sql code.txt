@@ -1,146 +1,285 @@
-DB PROJECT
--- 1. Users Table
-CREATE TABLE Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('Admin', 'Employee', 'Customer') NOT NULL,
-    phone_number VARCHAR(20),
-    license_number VARCHAR(50)
-);
+-- ============================================================
+--  DriveFlow Car Rental System — Database Schema
+--  Database : car_rental
+--  Engine   : MySQL 8.0  |  Charset: utf8mb4
+-- ============================================================
 
--- 2. Locations Table
+CREATE DATABASE IF NOT EXISTS `car_rental`
+    DEFAULT CHARACTER SET utf8mb4
+    COLLATE utf8mb4_0900_ai_ci;
+
+USE `car_rental`;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 1. LOCATIONS
+--    Stores all physical branch locations.
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE Locations (
-    location_id INT AUTO_INCREMENT PRIMARY KEY,
-    branch_name VARCHAR(100) NOT NULL,
-    address VARCHAR(255) NOT NULL,
-    contact_number VARCHAR(20)
+    location_id    INT          NOT NULL AUTO_INCREMENT,
+    branch_name    VARCHAR(100) NOT NULL,
+    address        VARCHAR(255) NOT NULL,
+    contact_number VARCHAR(20)  DEFAULT NULL,
+
+    PRIMARY KEY (location_id)
 );
 
--- 3. Vehicles Table
+
+-- ─────────────────────────────────────────────────────────────
+-- 2. USERS
+--    Admins, Employees, and Customers all share this table.
+--    license_number removed — it now lives in Documents
+--    as document_number, since it is a document attribute,
+--    not a user attribute.
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE Users (
+    user_id        INT          NOT NULL AUTO_INCREMENT,
+    full_name      VARCHAR(100) NOT NULL,
+    email          VARCHAR(100) NOT NULL,
+    password       VARCHAR(255) NOT NULL,
+    role           ENUM('Admin', 'Employee', 'Customer') NOT NULL,
+    phone_number   VARCHAR(20)  DEFAULT NULL,
+
+    PRIMARY KEY (user_id),
+    UNIQUE KEY uq_email (email)
+);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 3. USERS_BACKUP
+--    Audit log written by the before_profile_update trigger
+--    whenever a user's name or phone number changes.
+--    user_id is intentionally NOT a foreign key so the history
+--    is preserved even if the user account is deleted.
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE Users_backup (
+    u_backup_id      INT          NOT NULL AUTO_INCREMENT,
+    user_id          INT          DEFAULT NULL,
+    old_full_name    VARCHAR(100) DEFAULT NULL,
+    old_phone_number VARCHAR(20)  DEFAULT NULL,
+    changed_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (u_backup_id)
+);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 4. VEHICLES
+--    Fleet inventory. color column added to the live DB
+--    (not present in the original schema).
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE Vehicles (
-    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
-    make VARCHAR(50),
-    model VARCHAR(50),
-    year INT,
-    category VARCHAR(50),
-    license_plate VARCHAR(20) UNIQUE,
-    daily_rate DECIMAL(10,2),
-    status ENUM('Available', 'Rented', 'Maintenance', 'Cleaning') DEFAULT 'Available',
-    current_mileage INT,
-    current_location_id INT,
+    vehicle_id          INT            NOT NULL AUTO_INCREMENT,
+    make                VARCHAR(50)    DEFAULT NULL,
+    model               VARCHAR(50)    DEFAULT NULL,
+    color               VARCHAR(30)    DEFAULT NULL,
+    year                INT            DEFAULT NULL,
+    category            VARCHAR(50)    DEFAULT NULL,
+    license_plate       VARCHAR(20)    DEFAULT NULL,
+    daily_rate          DECIMAL(10,2)  DEFAULT NULL,
+    status              ENUM('Available', 'Rented', 'Maintenance', 'Cleaning')
+                                       DEFAULT 'Available',
+    current_mileage     INT            DEFAULT NULL,
+    current_location_id INT            DEFAULT NULL,
+
+    PRIMARY KEY (vehicle_id),
+    UNIQUE KEY uq_license_plate (license_plate),
     FOREIGN KEY (current_location_id) REFERENCES Locations(location_id)
 );
 
--- 4. Bookings Table
+
+-- ─────────────────────────────────────────────────────────────
+-- 5. BOOKINGS
+--    One row per rental reservation.
+--    actual_return_date is set by the Check-In inspection.
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE Bookings (
-    booking_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    vehicle_id INT,
-    pickup_location_id INT,
-    dropoff_location_id INT,
-    pickup_date DATETIME NOT NULL,
-    return_date DATETIME NOT NULL,
-    actual_return_date DATETIME,
-    status ENUM('Pending', 'Confirmed', 'Active', 'Completed', 'Cancelled') DEFAULT 'Pending',
-    
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (vehicle_id) REFERENCES Vehicles(vehicle_id),
-    FOREIGN KEY (pickup_location_id) REFERENCES Locations(location_id),
+    booking_id           INT      NOT NULL AUTO_INCREMENT,
+    user_id              INT      DEFAULT NULL,
+    vehicle_id           INT      DEFAULT NULL,
+    pickup_location_id   INT      DEFAULT NULL,
+    dropoff_location_id  INT      DEFAULT NULL,
+    pickup_date          DATETIME NOT NULL,
+    return_date          DATETIME NOT NULL,
+    actual_return_date   DATETIME DEFAULT NULL,
+    status               ENUM('Pending', 'Confirmed', 'Active', 'Completed', 'Cancelled')
+                                  DEFAULT 'Pending',
+
+    PRIMARY KEY (booking_id),
+    FOREIGN KEY (user_id)             REFERENCES Users(user_id),
+    FOREIGN KEY (vehicle_id)          REFERENCES Vehicles(vehicle_id),
+    FOREIGN KEY (pickup_location_id)  REFERENCES Locations(location_id),
     FOREIGN KEY (dropoff_location_id) REFERENCES Locations(location_id)
 );
 
--- 5. Invoices Table
+
+-- ─────────────────────────────────────────────────────────────
+-- 6. INVOICES
+--    Auto-generated when a booking is created.
+--    late_fees are added during Check-In if the vehicle is
+--    returned after the agreed return_date.
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE Invoices (
-    invoice_id INT AUTO_INCREMENT PRIMARY KEY,
-    booking_id INT,
-    base_amount DECIMAL(10,2),
-    late_fees DECIMAL(10,2),
-    security_deposit DECIMAL(10,2),
-    payment_status ENUM('Unpaid', 'Paid') DEFAULT 'Unpaid',
-    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+    invoice_id       INT           NOT NULL AUTO_INCREMENT,
+    booking_id       INT           DEFAULT NULL,
+    base_amount      DECIMAL(10,2) DEFAULT NULL,
+    late_fees        DECIMAL(10,2) DEFAULT NULL,
+    security_deposit DECIMAL(10,2) DEFAULT NULL,
+    payment_status   ENUM('Unpaid', 'Paid') DEFAULT 'Unpaid',
+    issued_at        DATETIME      DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (invoice_id),
     FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
 );
 
--- 6. Documents Table
- Create the new correct table
+
+-- ─────────────────────────────────────────────────────────────
+-- 7. DOCUMENTS
+--    Uploaded customer identity / licence files.
+--    document_number stores the number on the document
+--    (e.g. license number, CNIC, passport number).
+--    verified_at is DATETIME (original schema had DATE).
+--    verified_by references the Employee who approved the doc.
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE Documents (
-    document_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    document_type VARCHAR(50),
-    file_path VARCHAR(255),
+    document_id         INT          NOT NULL AUTO_INCREMENT,
+    user_id             INT          NOT NULL,
+    document_type       VARCHAR(50)  DEFAULT NULL,
+    document_number     VARCHAR(50)  DEFAULT NULL,
+    file_path           VARCHAR(255) DEFAULT NULL,
     verification_status ENUM('Pending', 'Verified', 'Rejected') DEFAULT 'Pending',
-    expiry_date DATE,
-    verified_by INT,
-    verified_at DATETIME,
-    CONSTRAINT fk_doc_user FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    CONSTRAINT fk_doc_employee FOREIGN KEY (verified_by) REFERENCES Users(user_id)
+    expiry_date         DATE         DEFAULT NULL,
+    verified_by         INT          DEFAULT NULL,
+    verified_at         DATETIME     DEFAULT NULL,
+
+    PRIMARY KEY (document_id),
+    FOREIGN KEY (user_id)     REFERENCES Users(user_id),
+    FOREIGN KEY (verified_by) REFERENCES Users(user_id)
 );
 
--- 7. Inspections Table
+
+-- ─────────────────────────────────────────────────────────────
+-- 8. INSPECTIONS
+--    Check-Out recorded when vehicle is handed to customer;
+--    Check-In recorded when vehicle is returned.
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE Inspections (
-    inspection_id INT AUTO_INCREMENT PRIMARY KEY,
-    booking_id INT,
-    employee_id INT,
-    inspection_type ENUM('Check-Out', 'Check-In'),
-    fuel_level VARCHAR(20),
-    mileage_reading INT,
-    damage_notes TEXT,
-    inspection_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id),
+    inspection_id   INT         NOT NULL AUTO_INCREMENT,
+    booking_id      INT         DEFAULT NULL,
+    employee_id     INT         DEFAULT NULL,
+    inspection_type ENUM('Check-Out', 'Check-In') DEFAULT NULL,
+    fuel_level      VARCHAR(20) DEFAULT NULL,
+    mileage_reading INT         DEFAULT NULL,
+    damage_notes    TEXT,
+    inspection_date DATETIME    DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (inspection_id),
+    FOREIGN KEY (booking_id)  REFERENCES Bookings(booking_id),
     FOREIGN KEY (employee_id) REFERENCES Users(user_id)
 );
 
--- 8. MaintenanceLogs Table
+
+-- ─────────────────────────────────────────────────────────────
+-- 9. MAINTENANCELOGS
+--    Service history for each vehicle.
+-- ─────────────────────────────────────────────────────────────
 CREATE TABLE MaintenanceLogs (
-    log_id INT AUTO_INCREMENT PRIMARY KEY,
-    vehicle_id INT,
-    service_type VARCHAR(100),
-    service_date DATE,
-    cost DECIMAL(10,2),
-    notes TEXT,
-    
+    log_id       INT           NOT NULL AUTO_INCREMENT,
+    vehicle_id   INT           DEFAULT NULL,
+    service_type VARCHAR(100)  DEFAULT NULL,
+    service_date DATE          DEFAULT NULL,
+    cost         DECIMAL(10,2) DEFAULT NULL,
+    notes        TEXT,
+
+    PRIMARY KEY (log_id),
     FOREIGN KEY (vehicle_id) REFERENCES Vehicles(vehicle_id)
 );
 
 
---9
-CREATE TABLE Users_backup (
-    u_backup_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT, -- not as a foreign key so user data stays even when user is deleted
-    old_full_name VARCHAR(100),
-    old_phone_number VARCHAR(20),
-    old_license_number VARCHAR(50),
-    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
+-- ─────────────────────────────────────────────────────────────
+-- TRIGGER : before_profile_update
+--    Backs up old values into Users_backup before any change
+--    to full_name or phone_number.
+--    IFNULL guards against NULL comparison returning NULL
+--    instead of TRUE (bug present in the original schema).
+-- ─────────────────────────────────────────────────────────────
 DELIMITER //
 
 CREATE TRIGGER before_profile_update
 BEFORE UPDATE ON Users
 FOR EACH ROW
 BEGIN
-    -- This ensures we only create a backup if the actual data changed
-    IF (OLD.full_name <> NEW.full_name OR 
-        OLD.phone_number <> NEW.phone_number OR 
-        OLD.license_number <> NEW.license_number) THEN
-        
-        INSERT INTO Users_backup (
-            user_id, 
-            old_full_name, 
-            old_phone_number, 
-            old_license_number
-        )
-        VALUES (
-            OLD.user_id, 
-            OLD.full_name, 
-            OLD.phone_number, 
-            OLD.license_number
-        );
+    IF (OLD.full_name <> NEW.full_name OR
+        IFNULL(OLD.phone_number, '') <> IFNULL(NEW.phone_number, '')) THEN
+        INSERT INTO Users_backup (user_id, old_full_name, old_phone_number)
+        VALUES (OLD.user_id, OLD.full_name, OLD.phone_number);
     END IF;
 END //
 
 DELIMITER ;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- VIEWS
+-- ─────────────────────────────────────────────────────────────
+
+-- Available vehicles with their current branch location.
+-- Used by the /fleet endpoint (supports color & price filters).
+CREATE OR REPLACE VIEW AvailableFleet AS
+SELECT
+    v.vehicle_id,
+    v.make,
+    v.model,
+    v.color,
+    v.category,
+    v.daily_rate,
+    l.branch_name
+FROM Vehicles v
+JOIN Locations l ON v.current_location_id = l.location_id
+WHERE v.status = 'Available';
+
+
+-- Customer-facing booking history with human-readable
+-- location names and vehicle details.
+-- Used by the /my-bookings/:user_id endpoint.
+CREATE OR REPLACE VIEW CustomerBookingSummary AS
+SELECT
+    b.booking_id,
+    b.user_id,
+    v.make,
+    v.model,
+    v.license_plate,
+    pl.branch_name AS pickup_location,
+    dl.branch_name AS dropoff_location,
+    b.pickup_date,
+    b.return_date,
+    b.status
+FROM Bookings b
+JOIN Vehicles  v  ON b.vehicle_id          = v.vehicle_id
+JOIN Locations pl ON b.pickup_location_id  = pl.location_id
+JOIN Locations dl ON b.dropoff_location_id = dl.location_id;
+
+
+-- Customer profile data returned by the /user/:user_id endpoint.
+-- Joins Documents for driving license verification status,
+-- expiry date, document number, and the employee who verified it.
+-- Uses LEFT JOIN so customers with no uploaded document still appear.
+-- ORDER BY document_id DESC in the route ensures the latest
+-- driving license document is returned when multiple exist.
+CREATE OR REPLACE VIEW CustomerDetails AS
+SELECT
+    u.user_id,
+    u.full_name,
+    u.email,
+    u.phone_number,
+    d.document_id,
+    d.document_number,
+    d.verification_status,
+    d.expiry_date,
+    e.full_name AS verified_by_employee
+FROM Users u
+LEFT JOIN Documents d
+    ON d.user_id = u.user_id
+    AND d.document_type = 'Driving License'
+LEFT JOIN Users e ON e.user_id = d.verified_by
+WHERE u.role = 'Customer';

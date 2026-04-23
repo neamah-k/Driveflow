@@ -364,7 +364,7 @@
                 const expirySpan = document.getElementById('prof-expiry');
                 const verifyText = document.getElementById('verified-by-text');
 
-                licInput.value = user.license_number || 'Not Provided';
+                licInput.value = user.document_number  || 'Not Provided';
                 expirySpan.innerText = user.expiry_date
                     ? new Date(user.expiry_date).toLocaleDateString()
                     : 'N/A';
@@ -429,33 +429,15 @@
             e.preventDefault();
 
             const docType = document.getElementById('doc-type').value;
-            const licenseNumber = document.getElementById('doc-value').value;
             const fileInput = document.getElementById('doc-file');
             const formData = new FormData();
 
             formData.append('user_id', userData.user_id);
             formData.append('document_type', docType);
+            formData.append('document_number', document.getElementById('doc-value').value);
             formData.append('expiry_date', document.getElementById('doc-expiry').value);
             formData.append('documentFile', fileInput.files[0]);
 
-            // Step 1: If Driving License, save license number to Users table first
-            if (docType === 'Driving License' && licenseNumber) {
-                const updateRes = await fetch(`http://localhost:5000/user/${userData.user_id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        full_name: userData.full_name,
-                        phone_number: userData.phone_number,
-                        license_number: licenseNumber
-                    })
-                });
-                if (!updateRes.ok) {
-                    alert("Failed to save license number. Please try again.");
-                    return;
-                }
-            }
-
-            // Step 2: Upload the document file
             const res = await fetch('http://localhost:5000/documents', {
                 method: 'POST',
                 body: formData
@@ -464,13 +446,14 @@
             if (res.ok) {
                 alert("Document submitted! It will appear in your profile once verified.");
                 e.target.reset();
-                toggleLicenseField(); // reset field visibility after form reset
+                toggleLicenseField();
                 if (typeof loadProfile === "function") loadProfile();
             } else {
                 const err = await res.json();
                 alert("Upload failed: " + (err.message || "Unknown error"));
             }
         };
+        
         // 8. Load locations
         async function loadLocations() {
             try {

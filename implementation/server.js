@@ -71,9 +71,9 @@ app.get('/vehicles', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    const { full_name, email, password, role, phone_number, license_number } = req.body;
-    const sql = "INSERT INTO Users (full_name, email, password, role, phone_number, license_number) VALUES (?, ?, ?, ?, ?, ?)";
-    const values = [full_name, email, password, role || 'Customer', phone_number, license_number];
+    const { full_name, email, password, role, phone_number } = req.body;
+    const sql = "INSERT INTO Users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, ?, ?)";
+    const values = [full_name, email, password, role || 'Customer', phone_number];
     db.query(sql, values, (err, result) => {
         if (err) return res.status(500).json(err);
         res.status(201).json({ message: "User registered successfully!", userId: result.insertId });
@@ -169,11 +169,10 @@ app.get('/user/:user_id', (req, res) => {
 });
 
 // --- UPDATE PROFILE ---
-// AFTER
 app.put('/user/:id', (req, res) => {
-    const { full_name, phone_number, license_number } = req.body;
-    const sql = "UPDATE Users SET full_name = ?, phone_number = ?, license_number = ? WHERE user_id = ?";
-    db.query(sql, [full_name, phone_number, license_number ?? null, req.params.id], (err) => {
+    const { full_name, phone_number } = req.body;
+    const sql = "UPDATE Users SET full_name = ?, phone_number = ? WHERE user_id = ?";
+    db.query(sql, [full_name, phone_number, req.params.id], (err) => {
         if (err) return res.status(500).json(err);
         res.json({ message: "Profile updated successfully!" });
     });
@@ -182,12 +181,17 @@ app.put('/user/:id', (req, res) => {
 // --- ALL BOOKINGS (Staff) ---
 app.get('/all-bookings', (req, res) => {
     const sql = `
-        SELECT b.booking_id, u.full_name AS customer_name, u.license_number,
-               v.make, v.model, b.pickup_date, b.return_date, b.status 
+        SELECT b.booking_id, u.full_name AS customer_name,
+            d.document_number AS license_number,
+            v.make, v.model, b.pickup_date, b.return_date, b.status 
         FROM Bookings b
         JOIN Users u ON b.user_id = u.user_id
         JOIN Vehicles v ON b.vehicle_id = v.vehicle_id
-        ORDER BY b.pickup_date DESC`;
+        LEFT JOIN Documents d ON d.user_id = u.user_id
+            AND d.document_type = 'Driving License'
+            AND d.verification_status = 'Verified'
+        ORDER BY b.pickup_date DESC
+        `;
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ message: "Error fetching all bookings", error: err });
         res.json(results);
@@ -231,15 +235,14 @@ app.get('/fleet', (req, res) => {
 
 // --- UPLOAD DOCUMENT ---
 app.post('/documents', upload.single('documentFile'), (req, res) => {
-    const { user_id, document_type, expiry_date } = req.body;
+    const { user_id, document_type, document_number, expiry_date } = req.body;
 
     if (!req.file) return res.status(400).json({ message: "No file uploaded." });
 
-    // Store path with forward slashes so URL works correctly
     const filePath = 'uploads/' + req.file.filename;
 
-    const sql = "INSERT INTO Documents (user_id, document_type, expiry_date, file_path, verification_status) VALUES (?, ?, ?, ?, 'Pending')";
-    db.query(sql, [user_id, document_type, expiry_date, filePath], (err, result) => {
+    const sql = "INSERT INTO Documents (user_id, document_type, document_number, expiry_date, file_path, verification_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
+    db.query(sql, [user_id, document_type, document_number || null, expiry_date, filePath], (err, result) => {
         if (err) return res.status(500).json(err);
         res.json({ message: "File uploaded successfully!", path: filePath });
     });
@@ -266,11 +269,11 @@ app.get('/employee/documents', (req, res) => {
             d.document_id,
             d.user_id,
             d.document_type,
+            d.document_number,
             CONCAT('http://localhost:5000/', REPLACE(d.file_path, '\\\\', '/')) AS file_path,
             d.verification_status,
             d.expiry_date,
-            u.full_name,
-            u.license_number
+            u.full_name
         FROM Documents d
         JOIN Users u ON d.user_id = u.user_id
         ORDER BY 
@@ -312,18 +315,22 @@ app.get('/employee/invoices', (req, res) => {
         SELECT 
             i.invoice_id, i.booking_id, i.base_amount, i.late_fees,
             i.security_deposit, i.payment_status, i.issued_at,
-            u.full_name, u.user_id, u.license_number,
+            u.full_name, u.user_id,
+            d.document_number AS license_number,
             (
-                SELECT d.verification_status 
-                FROM Documents d 
-                WHERE d.user_id = u.user_id 
-                  AND d.document_type = 'Driving License'
-                  AND d.verification_status = 'Verified'
+                SELECT d2.verification_status 
+                FROM Documents d2 
+                WHERE d2.user_id = u.user_id 
+                AND d2.document_type = 'Driving License'
+                AND d2.verification_status = 'Verified'
                 LIMIT 1
             ) AS license_verified
         FROM Invoices i
         JOIN Bookings b ON i.booking_id = b.booking_id
         JOIN Users u ON b.user_id = u.user_id
+        LEFT JOIN Documents d ON d.user_id = u.user_id        
+            AND d.document_type = 'Driving License'           
+            AND d.verification_status = 'Verified'            
         ORDER BY FIELD(i.payment_status, 'Unpaid', 'Paid'), i.issued_at DESC
     `;
     db.query(sql, (err, results) => {
