@@ -451,6 +451,196 @@ app.post('/employee/inspections', (req, res) => {
     });
 });
 
+// ════════════════════════════════════════════════════════════
+// ADMIN ROUTES
+// ════════════════════════════════════════════════════════════
+ 
+// ── DASHBOARD STATS ──────────────────────────────────────────
+app.get('/admin/stats', (req, res) => {
+  const sql = `
+    SELECT
+        (SELECT COUNT(*) FROM Users WHERE role = 'Employee') AS total_employees,
+        (SELECT COUNT(*) FROM Vehicles)                       AS total_vehicles,
+        (SELECT COUNT(*) FROM Users WHERE role = 'Customer') AS total_customers,
+        (SELECT COUNT(*) FROM Bookings)                       AS total_bookings,
+        (SELECT COALESCE(SUM(
+            COALESCE(base_amount,0) + COALESCE(late_fees,0) + COALESCE(security_deposit,0)
+         ), 0) FROM Invoices WHERE payment_status = 'Paid')  AS total_revenue
+`;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Stats query failed', error: err });
+        res.json(results[0]);
+    });
+});
+ 
+// ── EMPLOYEES (Users WHERE role='Employee') ───────────────────
+ 
+// GET all employees
+app.get('/admin/employees', (req, res) => {
+    const sql = `SELECT user_id, full_name, email, phone_number FROM Users WHERE role = 'Employee' ORDER BY user_id DESC`;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error fetching employees', error: err });
+        res.json(results);
+    });
+});
+ 
+// POST add new employee
+app.post('/admin/employees', (req, res) => {
+    const { full_name, email, password, phone_number } = req.body;
+    if (!full_name || !email || !password)
+        return res.status(400).json({ message: 'full_name, email, and password are required.' });
+ 
+    const sql = `INSERT INTO Users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, 'Employee', ?)`;
+    db.query(sql, [full_name, email, password, phone_number || null], (err, result) => {
+        if (err) {
+            if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Email already registered.' });
+            return res.status(500).json({ message: 'Failed to add employee', error: err });
+        }
+        res.status(201).json({ message: 'Employee added successfully.', user_id: result.insertId });
+    });
+});
+ 
+// DELETE employee
+app.delete('/admin/employees/:id', (req, res) => {
+    db.query(`DELETE FROM Users WHERE user_id = ? AND role = 'Employee'`, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ message: 'Failed to delete employee', error: err });
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Employee not found.' });
+        res.json({ message: 'Employee removed.' });
+    });
+});
+ 
+// ── VEHICLES ─────────────────────────────────────────────────
+ 
+// GET all vehicles
+app.get('/admin/vehicles', (req, res) => {
+    const sql = `
+        SELECT v.*, l.branch_name
+        FROM Vehicles v
+        LEFT JOIN Locations l ON v.current_location_id = l.location_id
+        ORDER BY v.vehicle_id DESC
+    `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error fetching vehicles', error: err });
+        res.json(results);
+    });
+});
+ 
+// POST add new vehicle
+app.post('/admin/vehicles', (req, res) => {
+    const { make, model, color, year, category, license_plate, daily_rate, current_mileage, current_location_id } = req.body;
+    if (!make || !model || !license_plate)
+        return res.status(400).json({ message: 'make, model, and license_plate are required.' });
+ 
+    const sql = `
+        INSERT INTO Vehicles (make, model, color, year, category, license_plate, daily_rate, status, current_mileage, current_location_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Available', ?, ?)
+    `;
+    db.query(sql, [make, model, color || null, year || null, category || null, license_plate, daily_rate || null, current_mileage || null, current_location_id || null], (err, result) => {
+        if (err) {
+            if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'License plate already exists.' });
+            return res.status(500).json({ message: 'Failed to add vehicle', error: err });
+        }
+        res.status(201).json({ message: 'Vehicle added successfully.', vehicle_id: result.insertId });
+    });
+});
+ 
+// DELETE vehicle (only if no bookings or maintenance logs attached)
+app.delete('/admin/vehicles/:id', (req, res) => {
+    db.query('SELECT COUNT(*) AS cnt FROM Bookings WHERE vehicle_id = ?', [req.params.id], (err, rows) => {
+        if (err) return res.status(500).json({ message: 'Check failed', error: err });
+        if (rows[0].cnt > 0)
+            return res.status(400).json({ message: 'Cannot delete — vehicle has booking history.' });
+
+        db.query('SELECT COUNT(*) AS cnt FROM MaintenanceLogs WHERE vehicle_id = ?', [req.params.id], (err2, rows2) => {
+            if (err2) return res.status(500).json({ message: 'Check failed', error: err2 });
+            if (rows2[0].cnt > 0)
+                return res.status(400).json({ message: 'Cannot delete — vehicle has maintenance history.' });
+
+            db.query('DELETE FROM Vehicles WHERE vehicle_id = ?', [req.params.id], (err3, result) => {
+                if (err3) return res.status(500).json({ message: 'Failed to delete vehicle', error: err3 });
+                if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found.' });
+                res.json({ message: 'Vehicle deleted.' });
+            });
+        });
+    });
+});
+// ── EMPLOYEE ACTIVITY ─────────────────────────────────────────
+ 
+// GET profile edits — only rows where an employee edited a customer account
+// Users_backup stores old values written by the before_profile_update trigger
+app.get('/admin/profile-edits', (req, res) => {
+    const sql = `
+        SELECT
+            ub.u_backup_id,
+            ub.user_id,
+            u.full_name      AS current_name,
+            u.email,
+            ub.old_full_name,
+            ub.old_phone_number,
+            u.phone_number   AS new_phone_number,
+            ub.changed_at
+        FROM Users_backup ub
+        JOIN Users u ON u.user_id = ub.user_id
+        WHERE u.role = 'Customer'
+        ORDER BY ub.changed_at DESC
+    `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error fetching profile edits', error: err });
+        res.json(results);
+    });
+});
+ 
+// GET document verifications/rejections done by employees
+app.get('/admin/doc-activity', (req, res) => {
+    const sql = `
+        SELECT
+            d.document_id,
+            d.document_type,
+            d.verification_status,
+            d.verified_at,
+            cu.full_name AS customer_name,
+            eu.full_name AS verified_by_name
+        FROM Documents d
+        JOIN Users cu ON cu.user_id = d.user_id
+        LEFT JOIN Users eu ON eu.user_id = d.verified_by
+        WHERE d.verified_by IS NOT NULL
+        ORDER BY d.verified_at DESC
+    `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error fetching document activity', error: err });
+        res.json(results);
+    });
+});
+ 
+// ── FINANCIAL REPORT ─────────────────────────────────────────
+ 
+// GET all invoices (paid + unpaid) with summary totals
+app.get('/admin/financial-report', (req, res) => {
+    const sql = `
+        SELECT
+            i.invoice_id,
+            i.booking_id,
+            i.base_amount,
+            i.late_fees,
+            i.security_deposit,
+            i.payment_status,
+            i.issued_at
+        FROM Invoices i
+        ORDER BY i.issued_at DESC
+    `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error generating report', error: err });
+ 
+        const total_revenue = results.filter(r => r.payment_status === 'Paid').reduce((s, r) => s + (Number(r.base_amount) || 0), 0);
+        const total_late_fees  = results.reduce((s, r) => s + (Number(r.late_fees) || 0), 0);
+        const paid_invoices    = results.filter(r => r.payment_status === 'Paid').length;
+        const unpaid_invoices  = results.filter(r => r.payment_status === 'Unpaid').length;
+ 
+        res.json({ total_revenue, total_late_fees, paid_invoices, unpaid_invoices, invoices: results });
+    });
+});
+ 
+
 
 // ── 404 HANDLER (must be last) ────────────────────────────────
 app.use((req, res) => {
