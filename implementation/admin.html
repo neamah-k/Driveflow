@@ -3,443 +3,642 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DriveFlow | Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <title>DriveFlow | Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; }
-        .sidebar {
-            width: 240px; min-height: 100vh; background: #1a1a2e;
-            position: fixed; top: 0; left: 0; padding-top: 20px; z-index: 100;
+        :root {
+            --bg:       #0a0a0f;
+            --surface:  #13131a;
+            --surface2: #1c1c28;
+            --border:   rgba(255,255,255,0.07);
+            --accent:   #c8f03c;
+            --accent2:  #5b5ef4;
+            --text:     #e8e8f0;
+            --muted:    #6b6b80;
+            --danger:   #ff4d6d;
+            --success:  #22d9a0;
+            --warning:  #f9b72d;
         }
-        .sidebar .brand { color: #fff; font-size: 1.4rem; font-weight: 700; padding: 10px 20px 30px; border-bottom: 1px solid #ffffff22; }
-        .sidebar .nav-link { color: #adb5bd; padding: 12px 20px; display: flex; align-items: center; gap: 10px; border-radius: 0; transition: all 0.2s; }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #dc354522; color: #fff; border-left: 3px solid #dc3545; }
-        .sidebar .nav-link i { font-size: 1.1rem; }
-        .main-content { margin-left: 240px; padding: 30px; }
-        .topbar { background: #fff; border-radius: 12px; padding: 15px 25px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .section { display: none; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 55% 40% at 0% 0%, rgba(91,94,244,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 45% 35% at 100% 100%, rgba(200,240,60,0.07) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── Navbar ── */
+        .df-navbar {
+            background: rgba(10,10,15,0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .df-brand { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); }
+        .df-brand span { color: var(--accent); }
+        .role-chip {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+            background: rgba(255,77,109,0.15); color: var(--danger);
+            border: 1px solid rgba(255,77,109,0.3); border-radius: 99px;
+            padding: 0.2rem 0.6rem; margin-left: 0.5rem;
+        }
+        .btn-logout {
+            background: rgba(255,77,109,0.1); color: var(--danger);
+            border: 1px solid rgba(255,77,109,0.25); border-radius: 8px;
+            padding: 0.45rem 1rem; font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-logout:hover { background: var(--danger); color: #fff; }
+
+        /* ── Layout ── */
+        .df-layout { display: flex; position: relative; z-index: 1; }
+
+        /* ── Sidebar ── */
+        .df-sidebar {
+            width: 220px; background: var(--surface);
+            border-right: 1px solid var(--border);
+            min-height: calc(100vh - 58px);
+            padding: 1.5rem 0.75rem; flex-shrink: 0;
+        }
+        .sidebar-section {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+            color: var(--muted); font-weight: 600; padding: 0 0.75rem;
+            margin-bottom: 0.5rem; margin-top: 1rem;
+        }
+        .df-nav-link {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.65rem 0.75rem; border-radius: 8px;
+            color: var(--muted); font-size: 0.88rem; font-weight: 500;
+            cursor: pointer; border: none; background: none;
+            width: 100%; text-align: left; transition: all 0.2s; margin-bottom: 0.15rem;
+        }
+        .df-nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .df-nav-link.active {
+            background: rgba(255,77,109,0.1); color: var(--danger);
+            border-left: 2px solid var(--danger);
+        }
+        .df-nav-link.logout-link { color: var(--danger); margin-top: 1rem; }
+        .df-nav-link.logout-link:hover { background: rgba(255,77,109,0.1); }
+
+        /* ── Main ── */
+        .df-main { flex: 1; padding: 2rem; overflow-x: hidden; }
+
+        /* ── Sections ── */
+        .section { display: none; animation: fadeUp 0.4s ease both; }
         .section.active { display: block; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-        .stat-card { border-radius: 12px; padding: 20px; color: white; }
-        .modal-header { background: #1a1a2e; color: white; }
-        #loadingOverlay { display:none; position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center; }
+
+        /* ── Page title ── */
+        .page-title {
+            font-family: 'Syne', sans-serif; font-size: 1.3rem;
+            font-weight: 800; margin-bottom: 1.5rem;
+        }
+
+        /* ── Stat cards ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; padding: 1.4rem 1.6rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .stat-card:hover { border-color: rgba(200,240,60,0.25); box-shadow: 0 0 20px rgba(200,240,60,0.08); }
+        .stat-card__val {
+            font-family: 'Syne', sans-serif; font-size: 2rem;
+            font-weight: 800; margin-bottom: 0.25rem;
+        }
+        .stat-card__label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+        .stat-accent   { color: var(--accent); }
+        .stat-indigo   { color: #8b8ef8; }
+        .stat-success  { color: var(--success); }
+        .stat-warning  { color: var(--warning); }
+
+        /* ── Cards ── */
+        .df-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem;
+        }
+        .df-card-title {
+            font-family: 'Syne', sans-serif; font-size: 1rem;
+            font-weight: 700; margin-bottom: 1.25rem;
+        }
+
+        /* ── Form inputs ── */
+        .df-input, .df-select {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text);
+            padding: 0.7rem 1rem; font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem; outline: none; width: 100%;
+            transition: border-color 0.2s; appearance: none;
+        }
+        .df-input:focus, .df-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,240,60,0.1); }
+        .df-input::placeholder { color: var(--muted); }
+        .df-select option { background: var(--surface2); }
+
+        /* ── Form grid ── */
+        .form-grid { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+        .form-grid .fg { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-grid label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+        .fg-sm  { flex: 0 0 130px; }
+        .fg-md  { flex: 0 0 180px; }
+        .fg-lg  { flex: 1 1 200px; }
+        .fg-btn { flex: 0 0 auto; }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            background: var(--accent); color: #0a0a0f; border: none;
+            border-radius: 8px; padding: 0.7rem 1.4rem;
+            font-family: 'Syne', sans-serif; font-weight: 700;
+            font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { background: #d4f55a; box-shadow: 0 6px 20px rgba(200,240,60,0.25); }
+        .btn-danger-sm {
+            background: rgba(255,77,109,0.1); color: var(--danger);
+            border: 1px solid rgba(255,77,109,0.25); border-radius: 7px;
+            padding: 0.35rem 0.8rem; font-size: 0.78rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-danger-sm:hover { background: var(--danger); color: #fff; }
+        .btn-ghost-sm {
+            background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+            border-radius: 7px; padding: 0.35rem 0.8rem; font-size: 0.78rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-ghost-sm:hover { color: var(--text); }
+
+        /* ── Quick actions ── */
+        .quick-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .qa-btn {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 0.7rem 1.2rem;
+            color: var(--text); font-size: 0.85rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .qa-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ── Table ── */
+        .df-table-wrap { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+        thead th {
+            font-family: 'Syne', sans-serif; font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--muted); padding: 0.85rem 1.1rem;
+            border-bottom: 1px solid var(--border); font-weight: 600; text-align: left;
+            background: var(--surface2);
+        }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        tbody td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        code { background: var(--surface2); padding: 0.2rem 0.5rem; border-radius: 5px; font-size: 0.82rem; color: var(--accent); }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-block; padding: 0.2rem 0.65rem;
+            border-radius: 99px; font-size: 0.7rem; font-weight: 600;
+        }
+        .badge-success  { background: rgba(34,217,160,0.12); color: var(--success); border: 1px solid rgba(34,217,160,0.25); }
+        .badge-danger   { background: rgba(255,77,109,0.12);  color: var(--danger);  border: 1px solid rgba(255,77,109,0.25); }
+        .badge-warning  { background: rgba(249,183,45,0.12);  color: var(--warning); border: 1px solid rgba(249,183,45,0.25); }
+        .badge-indigo   { background: rgba(91,94,244,0.12);   color: #8b8ef8;        border: 1px solid rgba(91,94,244,0.25); }
+        .badge-muted    { background: rgba(255,255,255,0.05); color: var(--muted);   border: 1px solid var(--border); }
+
+        /* ── Summary cards for report ── */
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .report-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.3rem; }
+        .report-card__val { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; margin-bottom: 0.2rem; }
+        .report-card__label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+        /* ── Toast ── */
+        .df-toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 0.9rem 1.4rem;
+            font-size: 0.88rem; min-width: 240px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .df-toast.show { transform: translateY(0); opacity: 1; }
+        .df-toast.t-success { border-color: rgba(34,217,160,0.4); }
+        .df-toast.t-danger  { border-color: rgba(255,77,109,0.4); }
+        .df-toast.t-warning { border-color: rgba(249,183,45,0.4); }
+        .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .t-success .toast-dot { background: var(--success); }
+        .t-danger  .toast-dot { background: var(--danger); }
+        .t-warning .toast-dot { background: var(--warning); }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            z-index: 200; align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; padding: 2rem; width: 100%; max-width: 420px;
+            animation: fadeUp 0.3s ease both; position: relative;
+        }
+        .modal-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; margin-bottom: 0.75rem; }
+        .modal-body  { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .btn-modal-cancel {
+            background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+            border-radius: 8px; padding: 0.65rem 1.25rem; font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-modal-cancel:hover { color: var(--text); }
+        .btn-modal-confirm {
+            background: var(--danger); color: #fff; border: none;
+            border-radius: 8px; padding: 0.65rem 1.25rem; font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-modal-confirm:hover { background: #ff2d52; }
+
+        /* ── Loading spinner ── */
+        .df-loading {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 9998;
+            align-items: center; justify-content: center;
+        }
+        .df-loading.show { display: flex; }
+        .spinner {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 3px solid var(--border); border-top-color: var(--accent);
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* ── Empty state ── */
+        .empty-state { text-align: center; padding: 3rem 2rem; color: var(--muted); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay">
-    <div class="spinner-border text-light" style="width:3rem;height:3rem;"></div>
+<!-- Loading -->
+<div class="df-loading" id="loadingOverlay">
+    <div class="spinner"></div>
 </div>
 
 <!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:11000">
-    <div id="toastEl" class="toast align-items-center text-white border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMsg">Done.</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
+<div class="df-toast" id="dfToast">
+    <div class="toast-dot"></div>
+    <span id="dfToastMsg">Done.</span>
 </div>
 
-<!-- Sidebar -->
-<div class="sidebar">
-    <div class="brand">🚗 DriveFlow</div>
-    <nav class="nav flex-column mt-2">
-        <a href="#" class="nav-link active" onclick="showSection('dashboard')">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('employees')">
-            <i class="bi bi-people"></i> Employees
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('vehicles')">
-            <i class="bi bi-car-front"></i> Vehicles
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('activity')">
-            <i class="bi bi-clock-history"></i> Employee Activity
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('report')">
-            <i class="bi bi-bar-chart-line"></i> Financial Report
-        </a>
-        <hr style="border-color:#ffffff22; margin: 10px 20px;">
-        <a href="#" class="nav-link text-danger" onclick="logout()">
-            <i class="bi bi-box-arrow-left"></i> Logout
-        </a>
-    </nav>
+<!-- Navbar -->
+<nav class="df-navbar">
+    <div style="display:flex;align-items:center;">
+        <span class="df-brand">Drive<span>Flow</span></span>
+        <span class="role-chip">Admin</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1.25rem;">
+        <span style="font-size:0.85rem;color:var(--muted);" id="adminNameLabel">—</span>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+</nav>
+
+<div class="df-layout">
+
+    <!-- Sidebar -->
+    <aside class="df-sidebar">
+        <div class="sidebar-section">Overview</div>
+        <button class="df-nav-link active" onclick="showSection('dashboard', this)">📊 Dashboard</button>
+        <div class="sidebar-section">Management</div>
+        <button class="df-nav-link" onclick="showSection('employees', this)">👥 Employees</button>
+        <button class="df-nav-link" onclick="showSection('vehicles', this)">🚗 Vehicles</button>
+        <div class="sidebar-section">Reports</div>
+        <button class="df-nav-link" onclick="showSection('activity', this)">🕐 Employee Activity</button>
+        <button class="df-nav-link" onclick="showSection('report', this)">💰 Financial Report</button>
+        <div class="sidebar-section" style="margin-top:1.5rem;"></div>
+        <button class="df-nav-link logout-link" onclick="logout()">🚪 Logout</button>
+    </aside>
+
+    <!-- Main -->
+    <main class="df-main">
+
+        <!-- ===== DASHBOARD ===== -->
+        <div class="section active" id="section-dashboard">
+            <div class="page-title">📊 Dashboard</div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card__val stat-danger" id="stat-employees" style="color:var(--danger);">—</div>
+                    <div class="stat-card__label">Total Employees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__val stat-indigo" id="stat-vehicles">—</div>
+                    <div class="stat-card__label">Total Vehicles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__val stat-accent" id="stat-revenue">—</div>
+                    <div class="stat-card__label">Revenue (PKR)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__val stat-warning" id="stat-bookings">—</div>
+                    <div class="stat-card__label">Total Bookings</div>
+                </div>
+            </div>
+
+            <div class="df-card">
+                <div class="df-card-title">Quick Actions</div>
+                <div class="quick-actions">
+                    <button class="qa-btn" onclick="showSection('employees', document.querySelectorAll('.df-nav-link')[1])">👥 Manage Employees</button>
+                    <button class="qa-btn" onclick="showSection('vehicles', document.querySelectorAll('.df-nav-link')[2])">🚗 Manage Vehicles</button>
+                    <button class="qa-btn" onclick="showSection('report', document.querySelectorAll('.df-nav-link')[4])">💰 View Report</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== EMPLOYEES ===== -->
+        <div class="section" id="section-employees">
+            <div class="page-title">👥 Manage Employees</div>
+
+            <div class="df-card">
+                <div class="df-card-title">Add New Employee</div>
+                <div class="form-grid">
+                    <div class="fg fg-lg">
+                        <label>Full Name</label>
+                        <input class="df-input" type="text" id="emp-name" placeholder="Full Name">
+                    </div>
+                    <div class="fg fg-lg">
+                        <label>Email</label>
+                        <input class="df-input" type="email" id="emp-email" placeholder="Email">
+                    </div>
+                    <div class="fg fg-md">
+                        <label>Phone</label>
+                        <input class="df-input" type="text" id="emp-phone" placeholder="Phone">
+                    </div>
+                    <div class="fg fg-md">
+                        <label>Password</label>
+                        <input class="df-input" type="password" id="emp-password" placeholder="Password">
+                    </div>
+                    <div class="fg fg-btn">
+                        <label style="opacity:0;">add</label>
+                        <button class="btn-primary" onclick="addEmployee()">+ Add Employee</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="df-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                    <div class="df-card-title" style="margin-bottom:0;">Employee List</div>
+                    <button class="btn-ghost-sm" onclick="loadEmployees()">↻ Refresh</button>
+                </div>
+                <div class="df-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="empTableBody">
+                            <tr><td colspan="5" class="empty-state"><div class="icon">⏳</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== VEHICLES ===== -->
+        <div class="section" id="section-vehicles">
+            <div class="page-title">🚗 Manage Vehicles</div>
+
+            <div class="df-card">
+                <div class="df-card-title">Add New Vehicle</div>
+                <div class="form-grid">
+                    <div class="fg fg-sm"><label>Make</label><input class="df-input" type="text" id="v-make" placeholder="Toyota"></div>
+                    <div class="fg fg-sm"><label>Model</label><input class="df-input" type="text" id="v-model" placeholder="Corolla"></div>
+                    <div class="fg fg-sm"><label>Color</label><input class="df-input" type="text" id="v-color" placeholder="White"></div>
+                    <div class="fg fg-sm"><label>Year</label><input class="df-input" type="number" id="v-year" placeholder="2022"></div>
+                    <div class="fg fg-md">
+                        <label>Category</label>
+                        <select class="df-select" id="v-category">
+                            <option value="">Category</option>
+                            <option>Economy</option><option>Sedan</option>
+                            <option>SUV</option><option>Luxury</option><option>Van</option>
+                        </select>
+                    </div>
+                    <div class="fg fg-md"><label>License Plate</label><input class="df-input" type="text" id="v-plate" placeholder="ABC-1234"></div>
+                    <div class="fg fg-sm"><label>Rate/day</label><input class="df-input" type="number" id="v-rate" placeholder="5000"></div>
+                    <div class="fg fg-sm"><label>Mileage</label><input class="df-input" type="number" id="v-mileage" placeholder="0"></div>
+                    <div class="fg fg-md">
+                        <label>Branch</label>
+                        <select class="df-select" id="v-location"><option value="">Select Branch</option></select>
+                    </div>
+                    <div class="fg fg-btn">
+                        <label style="opacity:0;">add</label>
+                        <button class="btn-primary" onclick="addVehicle()">+ Add Vehicle</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="df-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                    <div class="df-card-title" style="margin-bottom:0;">Vehicle Fleet</div>
+                    <button class="btn-ghost-sm" onclick="loadVehicles()">↻ Refresh</button>
+                </div>
+                <div class="df-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Make / Model</th><th>Color</th><th>Year</th><th>Category</th><th>Plate</th><th>Rate/day</th><th>Status</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="vehicleTableBody">
+                            <tr><td colspan="9" class="empty-state"><div class="icon">⏳</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ACTIVITY ===== -->
+        <div class="section" id="section-activity">
+            <div class="page-title">🕐 Employee Activity</div>
+
+            <div class="df-card">
+                <div class="df-card-title">Customer Profile Edits</div>
+                <div class="df-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Customer</th><th>Email</th><th>Old Name</th><th>Old Phone</th><th>New Phone</th><th>Changed At</th></tr>
+                        </thead>
+                        <tbody id="backupTableBody">
+                            <tr><td colspan="6" class="empty-state"><div class="icon">⏳</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="df-card">
+                <div class="df-card-title">Document Verifications</div>
+                <div class="df-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Doc ID</th><th>Customer</th><th>Type</th><th>Status</th><th>Verified By</th><th>Verified At</th></tr>
+                        </thead>
+                        <tbody id="docActivityBody">
+                            <tr><td colspan="6" class="empty-state"><div class="icon">⏳</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== REPORT ===== -->
+        <div class="section" id="section-report">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+                <div class="page-title" style="margin-bottom:0;">💰 Financial Report</div>
+                <button class="btn-ghost-sm" onclick="loadReport()">↻ Refresh</button>
+            </div>
+
+            <div class="report-grid">
+                <div class="report-card">
+                    <div class="report-card__val" style="color:var(--success);" id="rpt-total-revenue">—</div>
+                    <div class="report-card__label">Total Revenue</div>
+                </div>
+                <div class="report-card">
+                    <div class="report-card__val" style="color:var(--warning);" id="rpt-late-fees">—</div>
+                    <div class="report-card__label">Late Fees</div>
+                </div>
+                <div class="report-card">
+                    <div class="report-card__val" style="color:#8b8ef8;" id="rpt-paid-invoices">—</div>
+                    <div class="report-card__label">Paid Invoices</div>
+                </div>
+                <div class="report-card">
+                    <div class="report-card__val" style="color:var(--muted);" id="rpt-unpaid-invoices">—</div>
+                    <div class="report-card__label">Unpaid Invoices</div>
+                </div>
+            </div>
+
+            <div class="df-card">
+                <div class="df-card-title">Invoice Breakdown</div>
+                <div class="df-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Invoice ID</th><th>Booking ID</th><th>Base Amount</th><th>Late Fees</th><th>Deposit</th><th>Status</th><th>Issued At</th></tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr><td colspan="7" class="empty-state"><div class="icon">⏳</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
 </div>
-
-<!-- Main Content -->
-<div class="main-content">
-
-    <!-- Topbar -->
-    <div class="topbar">
-        <div>
-            <h5 class="mb-0 fw-bold" id="sectionTitle">Dashboard</h5>
-            <small class="text-muted">Admin Portal</small>
-        </div>
-        <span class="badge bg-danger px-3 py-2 fs-6" id="adminNameBadge">Loading...</span>
-    </div>
-
-    <!-- ===== DASHBOARD ===== -->
-    <div id="section-dashboard" class="section active">
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#dc3545,#b02a37);">
-                    <div class="fs-2 fw-bold" id="stat-employees">—</div>
-                    <div class="small mt-1">Total Employees</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#0d6efd,#0a58ca);">
-                    <div class="fs-2 fw-bold" id="stat-vehicles">—</div>
-                    <div class="small mt-1">Total Vehicles</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#198754,#146c43);">
-                    <div class="fs-2 fw-bold" id="stat-revenue">—</div>
-                    <div class="small mt-1">Total Revenue (PKR)</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#fd7e14,#dc6a0f);">
-                    <div class="fs-2 fw-bold" id="stat-bookings">—</div>
-                    <div class="small mt-1">Total Bookings</div>
-                </div>
-            </div>
-        </div>
-        <div class="card p-4">
-            <h6 class="fw-bold mb-3">Quick Actions</h6>
-            <div class="d-flex gap-3 flex-wrap">
-                <button class="btn btn-outline-danger" onclick="showSection('employees')"><i class="bi bi-person-plus me-2"></i>Manage Employees</button>
-                <button class="btn btn-outline-primary" onclick="showSection('vehicles')"><i class="bi bi-car-front me-2"></i>Manage Vehicles</button>
-                <button class="btn btn-outline-success" onclick="showSection('report')"><i class="bi bi-bar-chart-line me-2"></i>View Report</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== EMPLOYEES ===== -->
-    <div id="section-employees" class="section">
-        <div class="card p-4 mb-4">
-            <h6 class="fw-bold mb-3">Add New Employee</h6>
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <input type="text" id="emp-name" class="form-control" placeholder="Full Name">
-                </div>
-                <div class="col-md-3">
-                    <input type="email" id="emp-email" class="form-control" placeholder="Email">
-                </div>
-                <div class="col-md-2">
-                    <input type="text" id="emp-phone" class="form-control" placeholder="Phone">
-                </div>
-                <div class="col-md-2">
-                    <input type="password" id="emp-password" class="form-control" placeholder="Password">
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-danger w-100" onclick="addEmployee()"><i class="bi bi-person-plus me-1"></i>Add</button>
-                </div>
-            </div>
-        </div>
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0">Employee List</h6>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadEmployees()"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="empTableBody">
-                        <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== VEHICLES ===== -->
-    <div id="section-vehicles" class="section">
-        <div class="card p-4 mb-4">
-            <h6 class="fw-bold mb-3">Add New Vehicle</h6>
-            <div class="row g-3">
-                <div class="col-md-2"><input type="text" id="v-make" class="form-control" placeholder="Make"></div>
-                <div class="col-md-2"><input type="text" id="v-model" class="form-control" placeholder="Model"></div>
-                <div class="col-md-1"><input type="text" id="v-color" class="form-control" placeholder="Color"></div>
-                <div class="col-md-1"><input type="number" id="v-year" class="form-control" placeholder="Year"></div>
-                <div class="col-md-2">
-                    <select id="v-category" class="form-select">
-                        <option value="">Category</option>
-                        <option>Economy</option>
-                        <option>Sedan</option>
-                        <option>SUV</option>
-                        <option>Luxury</option>
-                        <option>Van</option>
-                    </select>
-                </div>
-                <div class="col-md-2"><input type="text" id="v-plate" class="form-control" placeholder="License Plate"></div>
-                <div class="col-md-1"><input type="number" id="v-rate" class="form-control" placeholder="Rate/day" step="0.01"></div>
-                <div class="col-md-2"><input type="number" id="v-mileage" class="form-control" placeholder="Mileage"></div>
-                <div class="col-md-2">
-                    <select id="v-location" class="form-select">
-                        <option value="">Branch</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-danger w-100" onclick="addVehicle()"><i class="bi bi-plus-circle me-1"></i>Add Vehicle</button>
-                </div>
-            </div>
-        </div>
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0">Vehicle Fleet</h6>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadVehicles()"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Make / Model</th>
-                            <th>Color</th>
-                            <th>Year</th>
-                            <th>Category</th>
-                            <th>Plate</th>
-                            <th>Rate/day</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="vehicleTableBody">
-                        <tr><td colspan="9" class="text-center text-muted py-4">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== EMPLOYEE ACTIVITY ===== -->
-    <div id="section-activity" class="section">
-        <!-- Profile edits log -->
-        <div class="card p-4 mb-4">
-            <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2"></i>Customer Profile Edits (by Employees)</h6>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Customer Name</th>
-                            <th>Email</th>
-                            <th>Old Name</th>
-                            <th>Old Phone</th>
-                            <th>New Phone</th>
-                            <th>Changed At</th>
-                        </tr>
-                    </thead>
-                    <tbody id="backupTableBody">
-                        <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Document verifications log -->
-        <div class="card p-4">
-            <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-check me-2"></i>Document Verifications / Rejections (by Employees)</h6>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Doc ID</th>
-                            <th>Customer</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Verified By</th>
-                            <th>Verified At</th>
-                        </tr>
-                    </thead>
-                    <tbody id="docActivityBody">
-                        <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== FINANCIAL REPORT ===== -->
-    <div id="section-report" class="section">
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-line me-2"></i>Financial Report</h6>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadReport()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-            </div>
-
-            <!-- Summary cards -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="bg-success text-white rounded-3 p-3 text-center">
-                        <div class="fs-4 fw-bold" id="rpt-total-revenue">—</div>
-                        <small>Total Revenue (PKR)</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="bg-warning text-dark rounded-3 p-3 text-center">
-                        <div class="fs-4 fw-bold" id="rpt-late-fees">—</div>
-                        <small>Total Late Fees (PKR)</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="bg-primary text-white rounded-3 p-3 text-center">
-                        <div class="fs-4 fw-bold" id="rpt-paid-invoices">—</div>
-                        <small>Paid Invoices</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="bg-secondary text-white rounded-3 p-3 text-center">
-                        <div class="fs-4 fw-bold" id="rpt-unpaid-invoices">—</div>
-                        <small>Unpaid Invoices</small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Invoice breakdown table -->
-            <h6 class="fw-bold mb-2">Invoice Breakdown</h6>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Invoice ID</th>
-                            <th>Booking ID</th>
-                            <th>Base Amount</th>
-                            <th>Late Fees</th>
-                            <th>Security Deposit</th>
-                            <th>Status</th>
-                            <th>Issued At</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportTableBody">
-                        <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-</div><!-- /main-content -->
 
 <!-- Confirm Delete Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Delete</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="confirmMsg">Are you sure?</div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
-            </div>
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <div class="modal-title">Confirm Delete</div>
+        <div class="modal-body" id="confirmMsg">Are you sure?</div>
+        <div class="modal-footer">
+            <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-modal-confirm" id="confirmOkBtn">Delete</button>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const API = 'http://localhost:5000';
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // Guard: only Admin allowed
-    if (!userData || userData.role !== 'Admin') {
-        window.location.href = 'login.html';
-    }
+    if (!userData || userData.role !== 'Admin') window.location.href = 'login.html';
+    document.getElementById('adminNameLabel').textContent = userData.name || userData.full_name || 'Admin';
 
-    document.getElementById('adminNameBadge').textContent = userData.full_name || 'Admin';
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
-    function authHeader() {
-        return { 'Content-Type': 'application/json' };
-    }
-
-    function showLoading(show) {
-        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-    }
-
+    // ── Toast ──
+    let toastTimer;
     function showToast(msg, type = 'success') {
-        const el = document.getElementById('toastEl');
-        el.className = `toast align-items-center text-white border-0 bg-${type}`;
-        document.getElementById('toastMsg').textContent = msg;
-        bootstrap.Toast.getOrCreateInstance(el).show();
+        const el = document.getElementById('dfToast');
+        document.getElementById('dfToastMsg').textContent = msg;
+        el.className = `df-toast t-${type} show`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
     }
 
-    const sectionTitles = {
-        dashboard: 'Dashboard',
-        employees: 'Manage Employees',
-        vehicles: 'Manage Vehicles',
-        activity: 'Employee Activity',
-        report: 'Financial Report'
-    };
+    // ── Loading ──
+    function showLoading(v) {
+        document.getElementById('loadingOverlay').classList.toggle('show', v);
+    }
 
-    function showSection(name) {
+    // ── Modal ──
+    function closeModal() { document.getElementById('confirmModal').classList.remove('open'); }
+
+    // ── Section switching ──
+    function showSection(name, btn) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.df-nav-link').forEach(b => b.classList.remove('active'));
         document.getElementById('section-' + name).classList.add('active');
-        document.getElementById('sectionTitle').textContent = sectionTitles[name] || name;
-        document.querySelectorAll('.sidebar .nav-link').forEach(l => {
-            if (l.getAttribute('onclick') && l.getAttribute('onclick').includes(`'${name}'`)) l.classList.add('active');
-        });
+        if (btn) btn.classList.add('active');
 
-        if (name === 'employees') loadEmployees();
-        if (name === 'vehicles') { loadVehicles(); loadLocationsDropdown(); }
-        if (name === 'activity') { loadBackupLog(); loadDocActivity(); }
-        if (name === 'report') loadReport();
-        if (name === 'dashboard') loadDashboard();
+        if (name === 'dashboard')  loadDashboard();
+        if (name === 'employees')  loadEmployees();
+        if (name === 'vehicles')   { loadVehicles(); loadLocationsDropdown(); }
+        if (name === 'activity')   { loadBackupLog(); loadDocActivity(); }
+        if (name === 'report')     loadReport();
     }
 
-    function logout() {
-        localStorage.removeItem('user');
-        window.location.href = 'login.html';
+    // ── DASHBOARD ──
+    async function loadDashboard() {
+        try {
+            const [sRes, rRes] = await Promise.all([
+                fetch(`${API}/admin/stats`),
+                fetch(`${API}/admin/financial-report`)
+            ]);
+            const stats = await sRes.json();
+            const rpt   = await rRes.json();
+
+            document.getElementById('stat-employees').textContent = stats.total_employees ?? '—';
+            document.getElementById('stat-vehicles').textContent  = stats.total_vehicles  ?? '—';
+            document.getElementById('stat-revenue').textContent   = 'PKR ' + Number(rpt.total_revenue || 0).toLocaleString();
+            document.getElementById('stat-bookings').textContent  = stats.total_bookings  ?? '—';
+        } catch(e) { console.error(e); }
     }
 
-    // ─── DASHBOARD ────────────────────────────────────────────────────────────
-  async function loadDashboard() {
-    try {
-        const [statsRes, rptRes] = await Promise.all([
-            fetch(`${API}/admin/stats`),
-            fetch(`${API}/admin/financial-report`)
-        ]);
-        const stats = await statsRes.json();
-        const rpt   = await rptRes.json();
-
-        document.getElementById('stat-employees').textContent = stats.total_employees ?? '—';
-        document.getElementById('stat-vehicles').textContent  = stats.total_vehicles ?? '—';
-        document.getElementById('stat-revenue').textContent   = Number(rpt.total_revenue || 0).toLocaleString();
-        document.getElementById('stat-bookings').textContent  = stats.total_bookings ?? '—';
-    } catch(e) { console.error(e); }
-}
-
-    // ─── EMPLOYEES ────────────────────────────────────────────────────────────
+    // ── EMPLOYEES ──
     async function loadEmployees() {
         const tbody = document.getElementById('empTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res = await fetch(`${API}/admin/employees`, { headers: authHeader() });
+            const res  = await fetch(`${API}/admin/employees`);
             const data = await res.json();
-            if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No employees found.</td></tr>'; return; }
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">No employees found.</td></tr>';
+                return;
+            }
             tbody.innerHTML = data.map(e => `
                 <tr>
-                    <td>#${e.user_id}</td>
-                    <td>${e.full_name}</td>
-                    <td>${e.email}</td>
-                    <td>${e.phone_number || '—'}</td>
-                    <td><button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('employee', ${e.user_id}, '${e.full_name}')"><i class="bi bi-trash"></i> Remove</button></td>
+                    <td><small style="color:var(--muted);">#${e.user_id}</small></td>
+                    <td><strong>${e.full_name}</strong></td>
+                    <td style="color:var(--muted);">${e.email}</td>
+                    <td style="color:var(--muted);">${e.phone_number || '—'}</td>
+                    <td><button class="btn-danger-sm" onclick="confirmDelete('employee', ${e.user_id}, '${e.full_name}')">🗑 Remove</button></td>
                 </tr>`).join('');
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Error loading employees.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
 
@@ -452,14 +651,14 @@
 
         showLoading(true);
         try {
-            const res = await fetch(`${API}/admin/employees`, {
+            const res  = await fetch(`${API}/admin/employees`, {
                 method: 'POST',
-                headers: authHeader(),
-                body: JSON.stringify({ full_name: name, email, phone_number: phone, password, role: 'Employee' })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name: name, email, phone_number: phone, password })
             });
             const data = await res.json();
             if (res.ok) {
-                showToast('Employee added!', 'success');
+                showToast('Employee added successfully!', 'success');
                 ['emp-name','emp-email','emp-phone','emp-password'].forEach(id => document.getElementById(id).value = '');
                 loadEmployees();
             } else { showToast(data.message || 'Failed to add employee.', 'danger'); }
@@ -467,40 +666,43 @@
         showLoading(false);
     }
 
-    // ─── VEHICLES ─────────────────────────────────────────────────────────────
+    // ── VEHICLES ──
     async function loadVehicles() {
         const tbody = document.getElementById('vehicleTableBody');
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res = await fetch(`${API}/admin/vehicles`, { headers: authHeader() });
+            const res  = await fetch(`${API}/admin/vehicles`);
             const data = await res.json();
-            if (!data.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No vehicles found.</td></tr>'; return; }
-            const statusColors = { Available:'success', Rented:'primary', Maintenance:'warning', Cleaning:'secondary' };
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem;">No vehicles found.</td></tr>';
+                return;
+            }
+            const statusMap = { Available:'badge-success', Rented:'badge-indigo', Maintenance:'badge-warning', Cleaning:'badge-muted' };
             tbody.innerHTML = data.map(v => `
                 <tr>
-                    <td>#${v.vehicle_id}</td>
-                    <td>${v.make} ${v.model}</td>
+                    <td><small style="color:var(--muted);">#${v.vehicle_id}</small></td>
+                    <td><strong>${v.make} ${v.model}</strong></td>
                     <td>${v.color || '—'}</td>
                     <td>${v.year || '—'}</td>
                     <td>${v.category || '—'}</td>
                     <td><code>${v.license_plate || '—'}</code></td>
                     <td>PKR ${Number(v.daily_rate||0).toFixed(0)}</td>
-                    <td><span class="badge bg-${statusColors[v.status]||'secondary'}">${v.status}</span></td>
-                    <td><button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('vehicle', ${v.vehicle_id}, '${v.make} ${v.model}')"><i class="bi bi-trash"></i> Remove</button></td>
+                    <td><span class="badge ${statusMap[v.status]||'badge-muted'}">${v.status}</span></td>
+                    <td><button class="btn-danger-sm" onclick="confirmDelete('vehicle', ${v.vehicle_id}, '${v.make} ${v.model}')">🗑 Remove</button></td>
                 </tr>`).join('');
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Error loading vehicles.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
 
     async function loadLocationsDropdown() {
         try {
-            const res = await fetch(`${API}/locations`, { headers: authHeader() });
+            const res  = await fetch(`${API}/locations`);
             const locs = await res.json();
-            const sel = document.getElementById('v-location');
-            sel.innerHTML = '<option value="">Branch</option>';
+            const sel  = document.getElementById('v-location');
+            sel.innerHTML = '<option value="">Select Branch</option>';
             locs.forEach(l => sel.innerHTML += `<option value="${l.location_id}">${l.branch_name}</option>`);
-        } catch(e) { console.warn('Could not load locations'); }
+        } catch(e) {}
     }
 
     async function addVehicle() {
@@ -508,21 +710,21 @@
             make:                document.getElementById('v-make').value.trim(),
             model:               document.getElementById('v-model').value.trim(),
             color:               document.getElementById('v-color').value.trim(),
-            year:                parseInt(document.getElementById('v-year').value),
+            year:                parseInt(document.getElementById('v-year').value) || null,
             category:            document.getElementById('v-category').value,
             license_plate:       document.getElementById('v-plate').value.trim(),
-            daily_rate:          parseFloat(document.getElementById('v-rate').value),
+            daily_rate:          parseFloat(document.getElementById('v-rate').value) || null,
             current_mileage:     parseInt(document.getElementById('v-mileage').value) || null,
-            current_location_id: parseInt(document.getElementById('v-location').value) || null,
-            status: 'Available'
+            current_location_id: parseInt(document.getElementById('v-location').value) || null
         };
-        if (!payload.make || !payload.model || !payload.license_plate) { showToast('Make, model and plate are required.', 'warning'); return; }
-
+        if (!payload.make || !payload.model || !payload.license_plate) {
+            showToast('Make, model and license plate are required.', 'warning'); return;
+        }
         showLoading(true);
         try {
-            const res = await fetch(`${API}/admin/vehicles`, {
+            const res  = await fetch(`${API}/admin/vehicles`, {
                 method: 'POST',
-                headers: authHeader(),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
@@ -530,29 +732,29 @@
                 showToast('Vehicle added!', 'success');
                 ['v-make','v-model','v-color','v-year','v-plate','v-rate','v-mileage'].forEach(id => document.getElementById(id).value = '');
                 loadVehicles();
-            } else { showToast(data.message || 'Failed to add vehicle.', 'danger'); }
+            } else { showToast(data.message || 'Failed.', 'danger'); }
         } catch(e) { showToast('Server error.', 'danger'); }
         showLoading(false);
     }
 
-    // ─── CONFIRM DELETE ───────────────────────────────────────────────────────
+    // ── DELETE ──
     let pendingDelete = null;
     function confirmDelete(type, id, label) {
         pendingDelete = { type, id };
         document.getElementById('confirmMsg').textContent = `Remove ${type} "${label}" (ID: ${id})? This cannot be undone.`;
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModal')).show();
+        document.getElementById('confirmModal').classList.add('open');
     }
     document.getElementById('confirmOkBtn').addEventListener('click', async () => {
         if (!pendingDelete) return;
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModal')).hide();
+        closeModal();
         showLoading(true);
         const { type, id } = pendingDelete;
         const url = type === 'employee' ? `${API}/admin/employees/${id}` : `${API}/admin/vehicles/${id}`;
         try {
-            const res = await fetch(url, { method: 'DELETE', headers: authHeader() });
+            const res  = await fetch(url, { method: 'DELETE' });
             const data = await res.json();
             if (res.ok) {
-                showToast(`${type.charAt(0).toUpperCase()+type.slice(1)} removed.`, 'success');
+                showToast(`${type} removed.`, 'success');
                 type === 'employee' ? loadEmployees() : loadVehicles();
             } else { showToast(data.message || 'Delete failed.', 'danger'); }
         } catch(e) { showToast('Server error.', 'danger'); }
@@ -560,81 +762,90 @@
         pendingDelete = null;
     });
 
-    // ─── EMPLOYEE ACTIVITY ────────────────────────────────────────────────────
+    // ── ACTIVITY ──
     async function loadBackupLog() {
         const tbody = document.getElementById('backupTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res = await fetch(`${API}/admin/profile-edits`, { headers: authHeader() });
+            const res  = await fetch(`${API}/admin/profile-edits`);
             const data = await res.json();
-            if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No edits recorded.</td></tr>'; return; }
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No edits recorded.</td></tr>';
+                return;
+            }
             tbody.innerHTML = data.map(r => `
-    <tr>
-        <td>${r.current_name}</td>
-        <td>${r.email}</td>
-        <td>${r.old_full_name || '—'}</td>
-        <td>${r.old_phone_number || '—'}</td>
-        <td>${r.new_phone_number || '—'}</td>
-        <td>${new Date(r.changed_at).toLocaleString()}</td>
-    </tr>`).join('');
+                <tr>
+                    <td><strong>${r.current_name}</strong></td>
+                    <td style="color:var(--muted);">${r.email}</td>
+                    <td style="color:var(--muted);">${r.old_full_name || '—'}</td>
+                    <td style="color:var(--muted);">${r.old_phone_number || '—'}</td>
+                    <td>${r.new_phone_number || '—'}</td>
+                    <td style="color:var(--muted);font-size:0.8rem;">${new Date(r.changed_at).toLocaleString()}</td>
+                </tr>`).join('');
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Error loading log.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
 
     async function loadDocActivity() {
         const tbody = document.getElementById('docActivityBody');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res = await fetch(`${API}/admin/doc-activity`, { headers: authHeader() });
+            const res  = await fetch(`${API}/admin/doc-activity`);
             const data = await res.json();
-            if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No activity yet.</td></tr>'; return; }
-            const statusColors = { Verified:'success', Rejected:'danger', Pending:'warning' };
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No activity yet.</td></tr>';
+                return;
+            }
+            const badgeMap = { Verified:'badge-success', Rejected:'badge-danger', Pending:'badge-warning' };
             tbody.innerHTML = data.map(d => `
                 <tr>
-                    <td>#${d.document_id}</td>
-                    <td>${d.customer_name}</td>
+                    <td><small style="color:var(--muted);">#${d.document_id}</small></td>
+                    <td><strong>${d.customer_name}</strong></td>
                     <td>${d.document_type || '—'}</td>
-                    <td><span class="badge bg-${statusColors[d.verification_status]||'secondary'} text-${d.verification_status==='Pending'?'dark':'white'}">${d.verification_status}</span></td>
+                    <td><span class="badge ${badgeMap[d.verification_status]||'badge-muted'}">${d.verification_status}</span></td>
                     <td>${d.verified_by_name || '—'}</td>
-                    <td>${d.verified_at ? new Date(d.verified_at).toLocaleString() : '—'}</td>
+                    <td style="color:var(--muted);font-size:0.8rem;">${d.verified_at ? new Date(d.verified_at).toLocaleString() : '—'}</td>
                 </tr>`).join('');
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error loading activity.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
 
-    // ─── FINANCIAL REPORT ─────────────────────────────────────────────────────
+    // ── REPORT ──
     async function loadReport() {
         const tbody = document.getElementById('reportTableBody');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res = await fetch(`${API}/admin/financial-report`, { headers: authHeader() });
+            const res  = await fetch(`${API}/admin/financial-report`);
             const data = await res.json();
 
             document.getElementById('rpt-total-revenue').textContent  = 'PKR ' + Number(data.total_revenue || 0).toLocaleString();
             document.getElementById('rpt-late-fees').textContent       = 'PKR ' + Number(data.total_late_fees || 0).toLocaleString();
-            document.getElementById('rpt-paid-invoices').textContent   = data.paid_invoices ?? '—';
+            document.getElementById('rpt-paid-invoices').textContent   = data.paid_invoices   ?? '—';
             document.getElementById('rpt-unpaid-invoices').textContent = data.unpaid_invoices ?? '—';
 
             const invoices = data.invoices || [];
-            if (!invoices.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No invoices found.</td></tr>'; return; }
+            if (!invoices.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">No invoices found.</td></tr>';
+                return;
+            }
             tbody.innerHTML = invoices.map(inv => `
                 <tr>
-                    <td>#${inv.invoice_id}</td>
-                    <td>#${inv.booking_id}</td>
+                    <td><small style="color:var(--muted);">#${inv.invoice_id}</small></td>
+                    <td><small style="color:var(--muted);">#${inv.booking_id}</small></td>
                     <td>PKR ${Number(inv.base_amount||0).toFixed(2)}</td>
-                    <td>PKR ${Number(inv.late_fees||0).toFixed(2)}</td>
+                    <td>${Number(inv.late_fees||0) > 0 ? `<span style="color:var(--danger);">PKR ${Number(inv.late_fees).toFixed(2)}</span>` : '—'}</td>
                     <td>PKR ${Number(inv.security_deposit||0).toFixed(2)}</td>
-                    <td><span class="badge ${inv.payment_status==='Paid'?'bg-success':'bg-warning text-dark'}">${inv.payment_status}</span></td>
-                    <td>${new Date(inv.issued_at).toLocaleDateString()}</td>
+                    <td><span class="badge ${inv.payment_status==='Paid'?'badge-success':'badge-danger'}">${inv.payment_status}</span></td>
+                    <td style="color:var(--muted);font-size:0.8rem;">${new Date(inv.issued_at).toLocaleDateString()}</td>
                 </tr>`).join('');
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error loading report.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
 
-    // Initial load
+    // Init
     loadDashboard();
 </script>
 </body>

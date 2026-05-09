@@ -71,12 +71,23 @@ app.get('/vehicles', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    const { full_name, email, password, role, phone_number } = req.body;
-    const sql = "INSERT INTO Users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, ?, ?)";
-    const values = [full_name, email, password, role || 'Customer', phone_number];
-    db.query(sql, values, (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.status(201).json({ message: "User registered successfully!", userId: result.insertId });
+    const { full_name, email, password, phone_number, license_number } = req.body;
+
+    if (!full_name || !email || !password)
+        return res.status(400).json({ message: "full_name, email and password are required." });
+
+    // Check if email already exists
+    db.query("SELECT user_id FROM Users WHERE email = ?", [email], (err, existing) => {
+        if (err) return res.status(500).json({ message: "Database error", error: err });
+
+        if (existing.length > 0)
+            return res.status(409).json({ message: "This email is already registered. Please log in instead." });
+
+        const sql = "INSERT INTO Users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, 'Customer', ?)";
+db.query(sql, [full_name, email, password, phone_number || null], (err2, result) => {
+            if (err2) return res.status(500).json({ message: "Registration failed", error: err2 });
+            res.status(201).json({ message: "Account created successfully!", userId: result.insertId });
+        });
     });
 });
 
@@ -129,7 +140,7 @@ app.post('/bookings', (req, res) => {
 
 // --- LOGIN ---
 app.post('/login', (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;  // role is now sent from login page
     if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
 
     const sql = "SELECT user_id, full_name, role FROM Users WHERE email = ? AND password = ?";
@@ -138,12 +149,22 @@ app.post('/login', (req, res) => {
         if (results.length === 0) return res.status(401).json({ message: "Invalid email or password" });
 
         const user = results[0];
+
+        // NEW: if a role was sent from the login tab, validate it matches
+        if (role && user.role !== role) {
+            return res.status(401).json({
+                message: `This account is registered as ${user.role}, not ${role}. Please select the correct tab.`
+            });
+        }
+
         res.status(200).json({
             message: "Login successful!",
             user: {
-                user_id: user.user_id,
+                id:        user.user_id,   // added 'id' — frontend uses userData.id
+                user_id:   user.user_id,
+                name:      user.full_name, // added 'name' — frontend uses userData.name
                 full_name: user.full_name,
-                role: user.role
+                role:      user.role
             }
         });
     });
@@ -235,14 +256,14 @@ app.get('/fleet', (req, res) => {
 
 // --- UPLOAD DOCUMENT ---
 app.post('/documents', upload.single('documentFile'), (req, res) => {
-    const { user_id, document_type, document_number, expiry_date } = req.body;
+    const { user_id, document_type, document_number, doc_value, expiry_date } = req.body;
 
     if (!req.file) return res.status(400).json({ message: "No file uploaded." });
 
     const filePath = 'uploads/' + req.file.filename;
 
     const sql = "INSERT INTO Documents (user_id, document_type, document_number, expiry_date, file_path, verification_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
-    db.query(sql, [user_id, document_type, document_number || null, expiry_date, filePath], (err, result) => {
+   db.query(sql, [user_id, document_type, document_number || doc_value || null, expiry_date, filePath], (err, result) => {
         if (err) return res.status(500).json(err);
         res.json({ message: "File uploaded successfully!", path: filePath });
     });
@@ -264,7 +285,9 @@ app.get('/locations', (req, res) => {
 
 // 1. GET ALL DOCUMENTS
 app.get('/employee/documents', (req, res) => {
-    const sql = `
+    const { status } = req.query;  
+
+    let sql = `
         SELECT 
             d.document_id,
             d.user_id,
@@ -273,13 +296,20 @@ app.get('/employee/documents', (req, res) => {
             CONCAT('http://localhost:5000/', REPLACE(d.file_path, '\\\\', '/')) AS file_path,
             d.verification_status,
             d.expiry_date,
-            u.full_name
+            d.verified_by,
+            u.full_name,
+            u.email
         FROM Documents d
         JOIN Users u ON d.user_id = u.user_id
-        ORDER BY 
-            FIELD(d.verification_status, 'Pending', 'Verified', 'Rejected'),
-            d.document_id DESC
     `;
+
+    // ← ADD THIS BLOCK
+    if (status && status !== 'all') {
+        sql += ` WHERE d.verification_status = ${db.escape(status)}`;
+    }
+
+    sql += ` ORDER BY FIELD(d.verification_status, 'Pending', 'Verified', 'Rejected'), d.document_id DESC`;
+
     db.query(sql, (err, results) => {
         if (err) {
             console.error("Error fetching documents:", err);
@@ -309,6 +339,21 @@ app.put('/employee/documents/:id/verify', (req, res) => {
     });
 });
 
+app.put('/employee/documents/:id', (req, res) => {
+    const docId = req.params.id;
+    const { verification_status, verified_by } = req.body;
+
+    if (!['Verified', 'Rejected'].includes(verification_status))
+        return res.status(400).json({ message: "Invalid status." });
+
+    const sql = `UPDATE Documents SET verification_status = ?, verified_by = ?, verified_at = NOW() WHERE document_id = ?`;
+    db.query(sql, [verification_status, verified_by, docId], (err, result) => {
+        if (err) return res.status(500).json({ message: "Failed to update document", error: err });
+        if (result.affectedRows === 0) return res.status(404).json({ message: "Document not found." });
+        res.json({ message: `Document ${verification_status} successfully.` });
+    });
+});
+
 // 3. GET ALL INVOICES
 app.get('/employee/invoices', (req, res) => {
     const sql = `
@@ -324,7 +369,7 @@ app.get('/employee/invoices', (req, res) => {
                 AND d2.document_type = 'Driving License'
                 AND d2.verification_status = 'Verified'
                 LIMIT 1
-            ) AS license_verified
+            ) AS verification_status
         FROM Invoices i
         JOIN Bookings b ON i.booking_id = b.booking_id
         JOIN Users u ON b.user_id = u.user_id
@@ -352,7 +397,7 @@ app.put('/employee/invoices/:id/pay', (req, res) => {
                   AND d.document_type = 'Driving License'
                   AND d.verification_status = 'Verified'
                 LIMIT 1
-            ) AS license_verified
+            ) AS verification_status
         FROM Invoices i
         JOIN Bookings b ON i.booking_id = b.booking_id
         JOIN Users u ON b.user_id = u.user_id
@@ -368,6 +413,36 @@ app.put('/employee/invoices/:id/pay', (req, res) => {
         if (invoice.license_verified !== 'Verified') {
             return res.status(403).json({ message: "Cannot mark as paid. Customer does not have a verified Driving License." });
         }
+
+        db.query("UPDATE Invoices SET payment_status = 'Paid' WHERE invoice_id = ?", [invoiceId], (err2) => {
+            if (err2) return res.status(500).json({ message: "Failed to update invoice", error: err2 });
+            res.json({ message: "Invoice marked as Paid successfully." });
+        });
+    });
+});
+
+app.put('/employee/invoices/:id/approve', (req, res) => {
+    const invoiceId = req.params.id;
+
+    const checkSql = `
+        SELECT i.invoice_id, i.payment_status, u.user_id,
+            (SELECT d.verification_status FROM Documents d 
+             WHERE d.user_id = u.user_id AND d.document_type = 'Driving License'
+             AND d.verification_status = 'Verified' LIMIT 1) AS license_verified
+        FROM Invoices i
+        JOIN Bookings b ON i.booking_id = b.booking_id
+        JOIN Users u ON b.user_id = u.user_id
+        WHERE i.invoice_id = ?`;
+
+    db.query(checkSql, [invoiceId], (err, results) => {
+        if (err) return res.status(500).json({ message: "Database error", error: err });
+        if (results.length === 0) return res.status(404).json({ message: "Invoice not found." });
+
+        const invoice = results[0];
+        if (invoice.payment_status === 'Paid')
+            return res.status(400).json({ message: "Invoice already Paid." });
+        if (invoice.license_verified !== 'Verified')
+            return res.status(403).json({ message: "Cannot approve — customer's driving license is not verified." });
 
         db.query("UPDATE Invoices SET payment_status = 'Paid' WHERE invoice_id = ?", [invoiceId], (err2) => {
             if (err2) return res.status(500).json({ message: "Failed to update invoice", error: err2 });
@@ -392,6 +467,39 @@ app.get('/employee/inspections', (req, res) => {
         WHERE b.status IN ('Confirmed', 'Active')
         ORDER BY b.pickup_date ASC
     `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ message: "Error fetching bookings", error: err });
+        res.json(results);
+    });
+});
+
+// GET BOOKINGS BY STATUS (used by employee.html Check-Out / Check-In tabs)
+app.get('/employee/bookings', (req, res) => {
+    const { status } = req.query;
+
+    let sql = `
+        SELECT 
+            b.booking_id, b.status, b.pickup_date, b.return_date,
+            b.vehicle_id,
+            u.full_name, u.user_id,
+            v.make, v.model, v.license_plate, v.current_mileage,
+            i.invoice_id,
+            pl.branch_name AS pickup_location,
+            dl.branch_name AS dropoff_location
+        FROM Bookings b
+        JOIN Users u ON b.user_id = u.user_id
+        JOIN Vehicles v ON b.vehicle_id = v.vehicle_id
+        LEFT JOIN Invoices i ON i.booking_id = b.booking_id
+        LEFT JOIN Locations pl ON pl.location_id = b.pickup_location_id
+        LEFT JOIN Locations dl ON dl.location_id = b.dropoff_location_id
+    `;
+
+    if (status) {
+        sql += ` WHERE b.status = ${db.escape(status)}`;
+    }
+
+    sql += ` ORDER BY b.pickup_date ASC`;
+
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ message: "Error fetching bookings", error: err });
         res.json(results);
@@ -639,7 +747,8 @@ app.get('/admin/financial-report', (req, res) => {
         res.json({ total_revenue, total_late_fees, paid_invoices, unpaid_invoices, invoices: results });
     });
 });
- 
+
+
 
 
 // ── 404 HANDLER (must be last) ────────────────────────────────

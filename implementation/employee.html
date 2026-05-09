@@ -3,704 +3,575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DriveFlow | Employee Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <title>DriveFlow | Employee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; }
-        .sidebar {
-            width: 240px; min-height: 100vh; background: #1a1a2e;
-            position: fixed; top: 0; left: 0; padding-top: 20px; z-index: 100;
+        :root {
+            --bg:       #0a0a0f;
+            --surface:  #13131a;
+            --surface2: #1c1c28;
+            --border:   rgba(255,255,255,0.07);
+            --accent:   #c8f03c;
+            --accent2:  #5b5ef4;
+            --text:     #e8e8f0;
+            --muted:    #6b6b80;
+            --danger:   #ff4d6d;
+            --success:  #22d9a0;
+            --warning:  #f9b72d;
         }
-        .sidebar .brand { color: #fff; font-size: 1.4rem; font-weight: 700; padding: 10px 20px 30px; border-bottom: 1px solid #ffffff22; }
-        .sidebar .nav-link { color: #adb5bd; padding: 12px 20px; display: flex; align-items: center; gap: 10px; border-radius: 0; transition: all 0.2s; }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #0d6efd22; color: #fff; border-left: 3px solid #0d6efd; }
-        .sidebar .nav-link i { font-size: 1.1rem; }
-        .main-content { margin-left: 240px; padding: 30px; }
-        .topbar { background: #fff; border-radius: 12px; padding: 15px 25px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .section { display: none; }
-        .section.active { display: block; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-        .badge-pending { background: #fff3cd; color: #856404; }
-        .badge-verified { background: #d1e7dd; color: #0a3622; }
-        .badge-rejected { background: #f8d7da; color: #58151c; }
-        .badge-paid { background: #d1e7dd; color: #0a3622; }
-        .badge-unpaid { background: #fff3cd; color: #856404; }
-        .doc-row td, .invoice-row td, .insp-row td { vertical-align: middle; }
-        .modal-header { background: #1a1a2e; color: white; }
-        .stat-card { border-radius: 12px; padding: 20px; color: white; }
-        #loadingOverlay { display:none; position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 55% 40% at 0% 0%, rgba(91,94,244,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 45% 35% at 100% 100%, rgba(200,240,60,0.07) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* Navbar */
+        .df-navbar {
+            background: rgba(10,10,15,0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .df-brand { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); text-decoration: none; }
+        .df-brand span { color: var(--accent); }
+        .role-chip { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: rgba(91,94,244,0.15); color: #8b8ef8; border: 1px solid rgba(91,94,244,0.3); border-radius: 99px; padding: 0.2rem 0.6rem; margin-left: 0.5rem; }
+        .btn-logout { background: rgba(255,77,109,0.1); color: var(--danger); border: 1px solid rgba(255,77,109,0.25); border-radius: 8px; padding: 0.45rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+        .btn-logout:hover { background: var(--danger); color: #fff; }
+
+        /* Layout */
+        .df-layout { display: flex; position: relative; z-index: 1; }
+
+        /* Sidebar */
+        .df-sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); min-height: calc(100vh - 58px); padding: 1.5rem 0.75rem; flex-shrink: 0; }
+        .sidebar-section { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; padding: 0 0.75rem; margin-bottom: 0.5rem; margin-top: 1rem; }
+        .df-nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 8px; color: var(--muted); font-size: 0.88rem; font-weight: 500; cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: all 0.2s; margin-bottom: 0.15rem; }
+        .df-nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .df-nav-link.active { background: rgba(91,94,244,0.12); color: #8b8ef8; border-left: 2px solid var(--accent2); }
+
+        /* Main */
+        .df-main { flex: 1; padding: 2rem; overflow-x: hidden; }
+        .tab-pane { display: none; animation: fadeUp 0.4s ease both; }
+        .tab-pane.active { display: block; }
+        .page-title { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; margin-bottom: 1.5rem; }
+
+        /* Sub-tabs */
+        .sub-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .sub-tab { padding: 0.55rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .sub-tab.active { background: rgba(91,94,244,0.12); color: #8b8ef8; border-color: rgba(91,94,244,0.3); }
+        .sub-tab:not(.active):hover { color: var(--text); }
+
+        .sub-pane { display: none; animation: fadeUp 0.35s ease both; }
+        .sub-pane.active { display: block; }
+
+        /* Cards grid */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .df-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; transition: border-color 0.3s; }
+        .df-card:hover { border-color: rgba(91,94,244,0.3); }
+
+        /* Doc card */
+        .doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+        .doc-name { font-weight: 600; font-size: 0.95rem; }
+        .doc-email { font-size: 0.78rem; color: var(--muted); }
+        .doc-detail { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.25rem; }
+        .doc-detail strong { color: var(--text); font-weight: 500; }
+        .doc-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .btn-verify { flex: 1; padding: 0.55rem; background: rgba(34,217,160,0.1); color: var(--success); border: 1px solid rgba(34,217,160,0.25); border-radius: 7px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-verify:hover { background: var(--success); color: #0a0a0f; }
+        .btn-reject { flex: 1; padding: 0.55rem; background: rgba(255,77,109,0.1); color: var(--danger); border: 1px solid rgba(255,77,109,0.25); border-radius: 7px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-reject:hover { background: var(--danger); color: #fff; }
+
+        /* Table */
+        .df-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        thead th { font-family: 'Syne', sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border); font-weight: 600; text-align: left; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        tbody td { padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
+        .badge-pending  { background: rgba(249,183,45,0.12); color: var(--warning); border: 1px solid rgba(249,183,45,0.25); }
+        .badge-success  { background: rgba(34,217,160,0.12); color: var(--success); border: 1px solid rgba(34,217,160,0.25); }
+        .badge-danger   { background: rgba(255,77,109,0.12); color: var(--danger);  border: 1px solid rgba(255,77,109,0.25); }
+        .badge-indigo   { background: rgba(91,94,244,0.12);  color: #8b8ef8;        border: 1px solid rgba(91,94,244,0.25); }
+        .badge-muted    { background: rgba(255,255,255,0.05); color: var(--muted);  border: 1px solid var(--border); }
+
+        /* Approve btn in table */
+        .btn-approve { background: rgba(34,217,160,0.1); color: var(--success); border: 1px solid rgba(34,217,160,0.25); border-radius: 7px; padding: 0.4rem 0.85rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-approve:hover { background: var(--success); color: #0a0a0f; }
+        .btn-approve:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Inspection cards */
+        .insp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; transition: border-color 0.25s; }
+        .insp-card:hover { border-color: rgba(91,94,244,0.3); }
+        .insp-car { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .insp-plate { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem; }
+        .insp-detail { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.2rem; }
+        .insp-detail strong { color: var(--text); font-weight: 500; }
+        .btn-insp { width: 100%; margin-top: 1rem; padding: 0.65rem; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.83rem; cursor: pointer; transition: all 0.2s; }
+        .btn-checkout { background: var(--accent2); color: #fff; }
+        .btn-checkout:hover { background: #7173f7; box-shadow: 0 6px 20px rgba(91,94,244,0.3); }
+        .btn-checkin  { background: var(--accent); color: #0a0a0f; }
+        .btn-checkin:hover  { background: #d4f55a; box-shadow: 0 6px 20px rgba(200,240,60,0.3); }
+
+        /* Filter select */
+        select.df-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0.55rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; cursor: pointer; appearance: none; }
+        select.df-select:focus { border-color: var(--accent2); }
+        select.df-select option { background: var(--surface2); }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; width: 100%; max-width: 460px; animation: fadeUp 0.35s ease both; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; margin-bottom: 1.25rem; }
+        .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; }
+        .modal-close:hover { color: var(--text); }
+        .field-wrap { margin-bottom: 1rem; }
+        .df-label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+        .df-input, .df-modal-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0.75rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .df-input:focus, .df-modal-select:focus { border-color: var(--accent2); }
+        .df-input::placeholder { color: var(--muted); }
+        .df-modal-select option { background: var(--surface2); }
+        .modal-divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+        .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; margin-bottom: 0.75rem; }
+        .btn-confirm { width: 100%; padding: 0.85rem; background: var(--accent); color: #0a0a0f; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+        .btn-confirm:hover { background: #d4f55a; }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 3rem 2rem; color: var(--muted); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .empty-state p { font-size: 0.88rem; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay" style="display:none; position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
-    <div class="spinner-border text-light" style="width:3rem;height:3rem;"></div>
-</div>
-
-<!-- Sidebar -->
-<div class="sidebar">
-    <div class="brand">🚗 DriveFlow</div>
-    <nav class="nav flex-column mt-2">
-        <a href="#" class="nav-link active" onclick="showSection('dashboard')">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('documents')">
-            <i class="bi bi-file-earmark-check"></i> Verify Documents
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('invoices')">
-            <i class="bi bi-receipt"></i> Manage Invoices
-        </a>
-        <a href="#" class="nav-link" onclick="showSection('inspections')">
-            <i class="bi bi-car-front"></i> Inspections
-        </a>
-        <hr style="border-color:#ffffff22; margin: 10px 20px;">
-        <a href="#" class="nav-link text-danger" onclick="logout()">
-            <i class="bi bi-box-arrow-left"></i> Logout
-        </a>
-    </nav>
-</div>
-
-<!-- Main Content -->
-<div class="main-content">
-
-    <!-- Topbar -->
-    <div class="topbar">
-        <div>
-            <h5 class="mb-0 fw-bold" id="sectionTitle">Dashboard</h5>
-            <small class="text-muted">Employee Portal</small>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-primary px-3 py-2 fs-6" id="empNameBadge">Loading...</span>
-        </div>
+<nav class="df-navbar">
+    <div style="display:flex;align-items:center;">
+        <a class="df-brand" href="#">Drive<span>Flow</span></a>
+        <span class="role-chip">Employee</span>
     </div>
-
-    <!-- ===== DASHBOARD SECTION ===== -->
-    <div id="section-dashboard" class="section active">
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#0d6efd,#0a58ca);">
-                    <div class="fs-2 fw-bold" id="stat-pending-docs">—</div>
-                    <div class="small mt-1">Pending Documents</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#198754,#146c43);">
-                    <div class="fs-2 fw-bold" id="stat-unpaid-invoices">—</div>
-                    <div class="small mt-1">Unpaid Invoices</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#fd7e14,#dc6a0f);">
-                    <div class="fs-2 fw-bold" id="stat-active-bookings">—</div>
-                    <div class="small mt-1">Active Bookings</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card" style="background: linear-gradient(135deg,#6f42c1,#59359a);">
-                    <div class="fs-2 fw-bold" id="stat-confirmed-bookings">—</div>
-                    <div class="small mt-1">Confirmed Bookings</div>
-                </div>
-            </div>
-        </div>
-        <div class="card p-4">
-            <h6 class="fw-bold mb-3">Quick Actions</h6>
-            <div class="d-flex gap-3 flex-wrap">
-                <button class="btn btn-outline-primary" onclick="showSection('documents')"><i class="bi bi-file-earmark-check me-2"></i>Review Documents</button>
-                <button class="btn btn-outline-success" onclick="showSection('invoices')"><i class="bi bi-receipt me-2"></i>Process Invoices</button>
-                <button class="btn btn-outline-warning" onclick="showSection('inspections')"><i class="bi bi-car-front me-2"></i>Start Inspection</button>
-            </div>
-        </div>
+    <div style="display:flex;align-items:center;gap:1.25rem;">
+        <span style="font-size:0.85rem;color:var(--muted);" id="welcomeName">—</span>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
     </div>
+</nav>
 
-    <!-- ===== DOCUMENTS SECTION ===== -->
-    <div id="section-documents" class="section">
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0">Customer Documents</h6>
-                <div class="d-flex gap-2">
-                    <select id="docFilter" class="form-select form-select-sm" style="width:150px" onchange="loadDocuments()">
-                        <option value="">All Status</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Verified">Verified</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="loadDocuments()"><i class="bi bi-arrow-clockwise"></i></button>
-                </div>
+<div class="df-layout">
+    <aside class="df-sidebar">
+        <div class="sidebar-section">Tasks</div>
+        <button class="df-nav-link active" onclick="showTab('documents', this); loadDocuments()">
+            <span>📄</span> Verify Documents
+        </button>
+        <button class="df-nav-link" onclick="showTab('invoices', this); loadInvoices()">
+            <span>🧾</span> Approve Invoices
+        </button>
+        <button class="df-nav-link" onclick="showTab('inspections', this); loadInspections()">
+            <span>🔍</span> Inspections
+        </button>
+    </aside>
+
+    <main class="df-main">
+
+        <!-- ============== Documents ============== -->
+        <div class="tab-pane active" id="pane-documents">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+                <div class="page-title" style="margin-bottom:0;">📄 Document Verification</div>
+                <select class="df-select" id="docStatusFilter" onchange="loadDocuments()">
+                    <option value="Pending">Pending</option>
+                    <option value="Verified">Verified</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="all">All</option>
+                </select>
             </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
+            <div class="cards-grid" id="documents-list">
+                <div class="empty-state"><div class="icon">⏳</div><p>Loading documents...</p></div>
+            </div>
+        </div>
+
+        <!-- ============== Invoices ============== -->
+        <div class="tab-pane" id="pane-invoices">
+            <div class="page-title">🧾 Invoice Approval</div>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem;">Approve payment only when the customer's driving license is <strong style="color:var(--text);">Verified</strong>.</p>
+            <div class="df-table-wrap">
+                <table>
+                    <thead>
                         <tr>
-                            <th>Doc ID</th>
+                            <th>#</th>
                             <th>Customer</th>
-                            <th>Type</th>
-                            <th>Expiry Date</th>
-                            <th>Status</th>
-                            <th>File</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="docTableBody">
-                        <tr><td colspan="7" class="text-center text-muted py-4">Loading documents...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== INVOICES SECTION ===== -->
-    <div id="section-invoices" class="section">
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0">Invoice Management</h6>
-                <div class="d-flex gap-2">
-                    <select id="invoiceFilter" class="form-select form-select-sm" style="width:150px" onchange="loadInvoices()">
-                        <option value="">All</option>
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Paid">Paid</option>
-                    </select>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="loadInvoices()"><i class="bi bi-arrow-clockwise"></i></button>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Invoice ID</th>
-                            <th>Booking ID</th>
-                            <th>Customer</th>
+                            <th>Vehicle</th>
                             <th>License</th>
-                            <th>Base Amt</th>
-                            <th>Late Fees</th>
-                            <th>Deposit</th>
+                            <th>Amount</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="invoiceTableBody">
-                        <tr><td colspan="9" class="text-center text-muted py-4">Loading invoices...</td></tr>
+                    <tbody id="invoices-list">
+                        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2.5rem;">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- ===== INSPECTIONS SECTION ===== -->
-    <div id="section-inspections" class="section">
-        <div class="row g-4">
-            <!-- Active/Confirmed Bookings for Inspection -->
-            <div class="col-12">
-                <div class="card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold mb-0">Bookings Pending Inspection</h6>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="loadInspections()"><i class="bi bi-arrow-clockwise"></i></button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Booking ID</th>
-                                    <th>Customer</th>
-                                    <th>Vehicle</th>
-                                    <th>Pickup Date</th>
-                                    <th>Return Date</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inspTableBody">
-                                <tr><td colspan="7" class="text-center text-muted py-4">Loading bookings...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- ============== Inspections ============== -->
+        <div class="tab-pane" id="pane-inspections">
+            <div class="page-title">🔍 Inspections</div>
+            <div class="sub-tabs">
+                <button class="sub-tab active" onclick="showSubTab('checkout', this)">🚀 Check-Out</button>
+                <button class="sub-tab" onclick="showSubTab('checkin', this)">🏁 Check-In</button>
+            </div>
+
+            <div class="sub-pane active" id="sub-checkout">
+                <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">Confirmed bookings ready for pick-up.</p>
+                <div class="cards-grid" id="checkout-list">
+                    <div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div>
+                </div>
+            </div>
+            <div class="sub-pane" id="sub-checkin">
+                <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">Active bookings — customer returning the vehicle.</p>
+                <div class="cards-grid" id="checkin-list">
+                    <div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div>
                 </div>
             </div>
         </div>
-    </div>
 
-</div><!-- end main-content -->
+    </main>
+</div>
 
+<!-- ============== Inspection Modal ============== -->
+<div class="modal-overlay" id="inspectionModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('inspectionModal')">✕</button>
+        <div class="modal-title" id="inspectionModalTitle">Inspection</div>
 
-<!-- ===== DOCUMENT DETAIL MODAL ===== -->
-<div class="modal fade" id="docModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2"></i>Document Verification</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <input type="hidden" id="insp-booking-id">
+        <input type="hidden" id="insp-type">
+        <input type="hidden" id="insp-vehicle-id">
+
+        <div class="field-wrap">
+            <span class="df-label">Fuel Level</span>
+            <select class="df-modal-select" id="insp-fuel">
+                <option>Full</option><option>3/4</option><option>1/2</option><option>1/4</option><option>Empty</option>
+            </select>
+        </div>
+        <div class="field-wrap">
+            <span class="df-label">Mileage Reading (km)</span>
+            <input class="df-input" type="number" id="insp-mileage" placeholder="e.g. 52400">
+        </div>
+        <div class="field-wrap">
+            <span class="df-label">Damage Notes</span>
+            <textarea class="df-input" id="insp-damage" rows="3" placeholder="Minor scratch on rear bumper. None if no damage." style="resize:vertical;"></textarea>
+        </div>
+
+        <div id="checkin-extra" style="display:none;">
+            <hr class="modal-divider">
+            <div class="section-label">Check-In Details</div>
+            <div class="field-wrap">
+                <span class="df-label">Actual Return Date</span>
+                <input class="df-input" type="datetime-local" id="insp-actual-return">
             </div>
-            <div class="modal-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6"><strong>Customer:</strong> <span id="modal-doc-customer"></span></div>
-                    <div class="col-md-6"><strong>Document Type:</strong> <span id="modal-doc-type"></span></div>
-                    <div class="col-md-6"><strong>Expiry Date:</strong> <span id="modal-doc-expiry"></span></div>
-                    <div class="col-md-6"><strong>Current Status:</strong> <span id="modal-doc-status"></span></div>
-                </div>
-                <div class="mb-3">
-                    <a id="modal-doc-file" href="#" target="_blank" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-eye me-1"></i>View Document File
-                    </a>
-                </div>
-                <div class="alert alert-info py-2">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Verifying this document will record your Employee ID as the verifier.
-                </div>
+            <div class="field-wrap">
+                <span class="df-label">New Vehicle Location</span>
+                <select class="df-modal-select" id="insp-new-location">
+                    <option value="" disabled selected>Select branch</option>
+                </select>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger" onclick="updateDocStatus('Rejected')">
-                    <i class="bi bi-x-circle me-1"></i>Reject
-                </button>
-                <button type="button" class="btn btn-success" onclick="updateDocStatus('Verified')">
-                    <i class="bi bi-check-circle me-1"></i>Verify & Accept
-                </button>
+            <div class="field-wrap">
+                <span class="df-label">Late Fees (Rs.) — 0 if on time</span>
+                <input class="df-input" type="number" id="insp-late-fees" value="0" min="0">
             </div>
         </div>
+
+        <button class="btn-confirm" onclick="submitInspection()">Submit Inspection →</button>
     </div>
 </div>
 
-<!-- ===== INVOICE MODAL ===== -->
-<div class="modal fade" id="invoiceModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Mark Invoice as Paid</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-6"><strong>Invoice ID:</strong> <span id="modal-inv-id"></span></div>
-                    <div class="col-6"><strong>Booking ID:</strong> <span id="modal-inv-booking"></span></div>
-                    <div class="col-6"><strong>Customer:</strong> <span id="modal-inv-customer"></span></div>
-                    <div class="col-6"><strong>License No.:</strong> <span id="modal-inv-license"></span></div>
-                    <div class="col-4"><strong>Base Amount:</strong><br><span class="text-primary fw-bold" id="modal-inv-base"></span></div>
-                    <div class="col-4"><strong>Late Fees:</strong><br><span class="text-danger fw-bold" id="modal-inv-late"></span></div>
-                    <div class="col-4"><strong>Deposit:</strong><br><span class="text-secondary fw-bold" id="modal-inv-deposit"></span></div>
-                </div>
-                <div class="alert alert-warning py-2" id="inv-license-warning" style="display:none">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> Customer's driving license document is not verified. Payment should only be accepted with a valid verified license.
-                </div>
-                <div class="alert alert-success py-2" id="inv-license-ok" style="display:none">
-                    <i class="bi bi-check-circle me-2"></i>
-                    License is verified. You may mark this invoice as Paid.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" id="markPaidBtn" onclick="markInvoicePaid()">
-                    <i class="bi bi-check-circle me-1"></i>Mark as Paid
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ===== INSPECTION MODAL ===== -->
-<div class="modal fade" id="inspModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-clipboard-check me-2"></i>Vehicle Inspection — <span id="modal-insp-type-label"></span></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6"><strong>Booking ID:</strong> <span id="modal-insp-booking"></span></div>
-                    <div class="col-md-6"><strong>Customer:</strong> <span id="modal-insp-customer"></span></div>
-                    <div class="col-md-6"><strong>Vehicle:</strong> <span id="modal-insp-vehicle"></span></div>
-                    <div class="col-md-6"><strong>Booking Status:</strong> <span id="modal-insp-status"></span></div>
-                </div>
-                <hr>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Inspection Type</label>
-                        <input type="text" class="form-control" id="insp-type" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Fuel Level</label>
-                        <select class="form-select" id="insp-fuel">
-                            <option value="Full">Full</option>
-                            <option value="3/4">3/4</option>
-                            <option value="1/2">1/2</option>
-                            <option value="1/4">1/4</option>
-                            <option value="Empty">Empty</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Mileage Reading</label>
-                        <input type="number" class="form-control" id="insp-mileage" placeholder="e.g. 45230">
-                    </div>
-                    <div class="col-md-6" id="checkin-location-group" style="display:none">
-                        <label class="form-label fw-semibold">New Vehicle Location</label>
-                        <select class="form-select" id="insp-location">
-                            <option value="">Select branch...</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6" id="checkin-late-group" style="display:none">
-                        <label class="form-label fw-semibold">Late Fees (PKR)</label>
-                        <input type="number" class="form-control" id="insp-late-fees" placeholder="0.00" value="0" min="0" step="0.01">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label fw-semibold">Damage Notes</label>
-                        <textarea class="form-control" id="insp-damage" rows="3" placeholder="Note any damage or observations..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitInspection()">
-                    <i class="bi bi-save me-1"></i>Save Inspection
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Toast Notification -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11000">
-    <div id="toastMsg" class="toast align-items-center text-white border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toastBody">Message here</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const API = 'http://localhost:5000';
-let currentEmployee = null;
-let currentDocId = null;
-let currentInvoiceId = null;
-let currentInspBookingId = null;
-let currentInspVehicleId = null;
-let currentInspType = null;
-let currentInspInvoiceId = null;
+    const userData = JSON.parse(localStorage.getItem('user'));
+    if (!userData || userData.role !== 'Employee') window.location.href = 'login.html';
+    else document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-window.onload = () => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!user || user.role !== 'Employee') {
-        window.location.href = 'login.html';
-        return;
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+    const BASE = 'http://localhost:5000';
+
+    // ---- Tabs ----
+    function showTab(name, btn) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.df-nav-link').forEach(b => b.classList.remove('active'));
+        document.getElementById('pane-' + name).classList.add('active');
+        if (btn) btn.classList.add('active');
     }
-    currentEmployee = user;
-    document.getElementById('empNameBadge').textContent = '👤 ' + user.full_name;
-    loadDashboard();
-    loadLocations();
-};
-
-// ─── Navigation ───────────────────────────────────────────────────────────────
-function showSection(name) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
-    document.getElementById('section-' + name).classList.add('active');
-    const titles = { dashboard:'Dashboard', documents:'Verify Documents', invoices:'Manage Invoices', inspections:'Inspections' };
-    document.getElementById('sectionTitle').textContent = titles[name] || name;
-    const links = document.querySelectorAll('.sidebar .nav-link');
-    links.forEach(l => { if (l.getAttribute('onclick') && l.getAttribute('onclick').includes(name)) l.classList.add('active'); });
-
-    if (name === 'documents') loadDocuments();
-    else if (name === 'invoices') loadInvoices();
-    else if (name === 'inspections') loadInspections();
-    else loadDashboard();
-    return false;
-}
-
-function logout() {
-    localStorage.removeItem('user');
-    window.location.href = 'login.html';
-}
-
-// ─── Toast ────────────────────────────────────────────────────────────────────
-function showToast(msg, type = 'success') {
-    const el = document.getElementById('toastMsg');
-    el.className = `toast align-items-center text-white border-0 bg-${type}`;
-    document.getElementById('toastBody').textContent = msg;
-    bootstrap.Toast.getOrCreateInstance(el, { delay: 3000 }).show();
-}
-
-function showLoading(v) { document.getElementById('loadingOverlay').style.display = v ? 'flex' : 'none'; }
-
-// ─── Dashboard Stats ──────────────────────────────────────────────────────────
-async function loadDashboard() {
-    try {
-        const [docs, invoices, bookings] = await Promise.all([
-            fetch(`${API}/employee/documents`, { headers: authHeader() }).then(r => r.json()).catch(() => []),
-            fetch(`${API}/employee/invoices`, { headers: authHeader() }).then(r => r.json()).catch(() => []),
-            fetch(`${API}/employee/inspections`, { headers: authHeader() }).then(r => r.json()).catch(() => [])
-        ]);
-        document.getElementById('stat-pending-docs').textContent = Array.isArray(docs) ? docs.filter(d => d.verification_status === 'Pending').length : '—';
-        document.getElementById('stat-unpaid-invoices').textContent = Array.isArray(invoices) ? invoices.filter(i => i.payment_status === 'Unpaid').length : '—';
-        document.getElementById('stat-active-bookings').textContent = Array.isArray(bookings) ? bookings.filter(b => b.status === 'Active').length : '—';
-        document.getElementById('stat-confirmed-bookings').textContent = Array.isArray(bookings) ? bookings.filter(b => b.status === 'Confirmed').length : '—';
-    } catch(e) { console.error(e); }
-}
-
-function authHeader() {
-    return { 'Content-Type': 'application/json' };
-}
-
-// ─── DOCUMENTS ────────────────────────────────────────────────────────────────
-async function loadDocuments() {
-    const filter = document.getElementById('docFilter').value;
-    const tbody = document.getElementById('docTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Loading...</td></tr>';
-    try {
-        const res = await fetch(`${API}/employee/documents`, { headers: authHeader() });
-        let docs = await res.json();
-        if (filter) docs = docs.filter(d => d.verification_status === filter);
-
-        if (!docs.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No documents found.</td></tr>'; return; }
-
-        tbody.innerHTML = docs.map(d => `
-            <tr class="doc-row">
-                <td>#${d.document_id}</td>
-                <td>${d.full_name}</td>
-                <td><span class="badge bg-secondary">${d.document_type}</span></td>
-                <td>${d.expiry_date ? new Date(d.expiry_date).toLocaleDateString() : 'N/A'}</td>
-                <td><span class="badge badge-${d.verification_status.toLowerCase()}">${d.verification_status}</span></td>
-                <td>
-                    ${d.file_path ? `<a href="${d.file_path}" target="_blank" class="btn btn-sm btn-outline-info py-0"><i class="bi bi-eye"></i></a>` : '<span class="text-muted small">No file</span>'}
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-primary py-0" onclick="openDocModal(${JSON.stringify(d).replace(/"/g,'&quot;')})">
-                        <i class="bi bi-pencil-square"></i> Review
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error loading documents. Is the server running?</td></tr>';
+    function showSubTab(name, btn) {
+        document.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+        document.getElementById('sub-' + name).classList.add('active');
+        if (btn) btn.classList.add('active');
     }
-}
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-function openDocModal(doc) {
-    currentDocId = doc.document_id;
-    document.getElementById('modal-doc-customer').textContent = doc.full_name;
-    document.getElementById('modal-doc-type').textContent = doc.document_type;
-    document.getElementById('modal-doc-expiry').textContent = doc.expiry_date ? new Date(doc.expiry_date).toLocaleDateString() : 'N/A';
-    document.getElementById('modal-doc-status').innerHTML = `<span class="badge badge-${doc.verification_status.toLowerCase()}">${doc.verification_status}</span>`;
-    const fileLink = document.getElementById('modal-doc-file');
-    if (doc.file_path) { fileLink.href = doc.file_path; fileLink.style.display = 'inline-block'; }
-    else { fileLink.style.display = 'none'; }
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('docModal')).show();
-}
+    // ---- Documents ----
+    async function loadDocuments() {
+        const status = document.getElementById('docStatusFilter').value;
+        const container = document.getElementById('documents-list');
+        container.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div>';
 
-async function updateDocStatus(status) {
-    showLoading(true);
-    try {
-        const res = await fetch(`${API}/employee/documents/${currentDocId}/verify`, {
-            method: 'PUT',
-            headers: authHeader(),
-            body: JSON.stringify({ status, employee_id: currentEmployee.user_id })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            showToast(`Document ${status} successfully.`, status === 'Verified' ? 'success' : 'danger');
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('docModal')).hide();
-            loadDocuments();
-            loadDashboard();
-        } else { showToast(data.message || 'Failed to update.', 'danger'); }
-    } catch(e) { showToast('Server error.', 'danger'); }
-    showLoading(false);
-}
+        try {
+            const url = status === 'all' ? `${BASE}/employee/documents` : `${BASE}/employee/documents?status=${status}`;
+            const res  = await fetch(url);
+            const docs = await res.json();
 
-// ─── INVOICES ────────────────────────────────────────────────────────────────
-async function loadInvoices() {
-    const filter = document.getElementById('invoiceFilter').value;
-    const tbody = document.getElementById('invoiceTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Loading...</td></tr>';
-    try {
-        const res = await fetch(`${API}/employee/invoices`, { headers: authHeader() });
-        let invoices = await res.json();
-        if (filter) invoices = invoices.filter(i => i.payment_status === filter);
+            if (!docs || docs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No documents found.</p></div>';
+                return;
+            }
 
-        if (!invoices.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No invoices found.</td></tr>'; return; }
+            container.innerHTML = docs.map(doc => {
+                const badgeCls = doc.verification_status === 'Verified' ? 'badge-success'
+                               : doc.verification_status === 'Rejected'  ? 'badge-danger'
+                               : 'badge-pending';
+                const expiry = doc.expiry_date ? new Date(doc.expiry_date).toLocaleDateString() : 'N/A';
+                const isPending = doc.verification_status === 'Pending';
 
-        tbody.innerHTML = invoices.map(inv => `
-            <tr class="invoice-row">
-                <td>#${inv.invoice_id}</td>
-                <td>#${inv.booking_id}</td>
-                <td>${inv.full_name}</td>
-                <td><span class="badge ${inv.license_verified === 'Verified' ? 'bg-success' : 'bg-warning text-dark'}">${inv.license_number || 'N/A'}</span></td>
-                <td>PKR ${Number(inv.base_amount||0).toFixed(2)}</td>
-                <td class="text-danger">PKR ${Number(inv.late_fees||0).toFixed(2)}</td>
-                <td>PKR ${Number(inv.security_deposit||0).toFixed(2)}</td>
-                <td><span class="badge badge-${inv.payment_status.toLowerCase()}">${inv.payment_status}</span></td>
-                <td>
-                    ${inv.payment_status === 'Unpaid' ? `
-                    <button class="btn btn-sm btn-success py-0" onclick="openInvoiceModal(${JSON.stringify(inv).replace(/"/g,'&quot;')})">
-                        <i class="bi bi-check2-circle"></i> Pay
-                    </button>` : '<span class="text-muted small">Paid</span>'}
-                </td>
-            </tr>
-        `).join('');
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Error loading invoices.</td></tr>';
-    }
-}
+                return `
+    <div class="df-card">
+        <div class="doc-header">
+            <div>
+                <div class="doc-name">${doc.full_name}</div>
+                <div class="doc-email">${doc.email || '—'}</div>
+            </div>
+            <span class="badge ${badgeCls}">${doc.verification_status}</span>
+        </div>
+        <div class="doc-detail"><strong>Type:</strong> ${doc.document_type}</div>
+        <div class="doc-detail"><strong>Doc #:</strong> ${doc.document_number || '—'}</div>
+        <div class="doc-detail"><strong>Expiry:</strong> ${expiry}</div>
+        ${doc.file_path
+            ? `<div class="doc-detail" style="margin-top:0.5rem;">
+                <a href="${doc.file_path}" target="_blank"
+                   style="color:var(--accent2);font-size:0.8rem;text-decoration:none;">
+                   📎 View Uploaded Document
+                </a>
+               </div>`
+            : `<div class="doc-detail" style="color:var(--muted);font-size:0.8rem;">No file uploaded</div>`
+        }
+        ${doc.verified_by
+            ? `<div class="doc-detail" style="margin-top:0.4rem;font-size:0.75rem;">
+                <strong>Actioned by:</strong> Employee #${doc.verified_by}
+               </div>`
+            : ''
+        }
+        ${isPending ? `
+        <div class="doc-actions">
+            <button class="btn-verify" onclick="verifyDocument(${doc.document_id}, 'Verified')">✓ Verify</button>
+            <button class="btn-reject" onclick="verifyDocument(${doc.document_id}, 'Rejected')">✗ Reject</button>
+        </div>` : ''}
+    </div>
+`;
 
-function openInvoiceModal(inv) {
-    currentInvoiceId = inv.invoice_id;
-    document.getElementById('modal-inv-id').textContent = '#' + inv.invoice_id;
-    document.getElementById('modal-inv-booking').textContent = '#' + inv.booking_id;
-    document.getElementById('modal-inv-customer').textContent = inv.full_name;
-    document.getElementById('modal-inv-license').textContent = inv.license_number || 'N/A';
-    document.getElementById('modal-inv-base').textContent = 'PKR ' + Number(inv.base_amount||0).toFixed(2);
-    document.getElementById('modal-inv-late').textContent = 'PKR ' + Number(inv.late_fees||0).toFixed(2);
-    document.getElementById('modal-inv-deposit').textContent = 'PKR ' + Number(inv.security_deposit||0).toFixed(2);
-
-    const licOk = inv.license_verified === 'Verified';
-    document.getElementById('inv-license-warning').style.display = licOk ? 'none' : 'block';
-    document.getElementById('inv-license-ok').style.display = licOk ? 'block' : 'none';
-    document.getElementById('markPaidBtn').disabled = !licOk;
-
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('invoiceModal')).show();
-}
-
-async function markInvoicePaid() {
-    showLoading(true);
-    try {
-        const res = await fetch(`${API}/employee/invoices/${currentInvoiceId}/pay`, {
-            method: 'PUT',
-            headers: authHeader(),
-            body: JSON.stringify({ employee_id: currentEmployee.user_id })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            showToast('Invoice marked as Paid!', 'success');
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('invoiceModal')).hide();
-            loadInvoices();
-            loadDashboard();
-        } else { showToast(data.message || 'Failed.', 'danger'); }
-    } catch(e) { showToast('Server error.', 'danger'); }
-    showLoading(false);
-}
-
-// ─── INSPECTIONS ──────────────────────────────────────────────────────────────
-async function loadInspections() {
-    const tbody = document.getElementById('inspTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Loading...</td></tr>';
-    try {
-        const res = await fetch(`${API}/employee/inspections`, { headers: authHeader() });
-        const bookings = await res.json();
-        if (!bookings.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No bookings pending inspection.</td></tr>'; return; }
-
-        tbody.innerHTML = bookings.map(b => {
-            const isConfirmed = b.status === 'Confirmed';
-            const isActive = b.status === 'Active';
-            const btnLabel = isConfirmed ? 'Check-Out' : (isActive ? 'Check-In' : '—');
-            const btnClass = isConfirmed ? 'btn-warning' : 'btn-success';
-            return `
-            <tr class="insp-row">
-                <td>#${b.booking_id}</td>
-                <td>${b.full_name}</td>
-                <td>${b.make} ${b.model} (${b.year})</td>
-                <td>${new Date(b.pickup_date).toLocaleDateString()}</td>
-                <td>${new Date(b.return_date).toLocaleDateString()}</td>
-                <td><span class="badge ${isConfirmed ? 'bg-primary' : 'bg-warning text-dark'}">${b.status}</span></td>
-                <td>
-                    ${(isConfirmed || isActive) ? `
-                    <button class="btn btn-sm ${btnClass} py-0"
-                        onclick="openInspModal(${b.booking_id},'${b.full_name}','${b.make} ${b.model} (${b.year})','${b.status}',${b.vehicle_id},${b.invoice_id||'null'}, new Date('${b.return_date}'))">
-                        <i class="bi bi-clipboard-check"></i> ${btnLabel}
-                    </button>` : '—'}
-                </td>
-            </tr>`;
-        }).join('');
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error loading bookings.</td></tr>';
-    }
-}
-
-function openInspModal(bookingId, customer, vehicle, status, vehicleId, invoiceId, returnDateStr) {
-    currentInspBookingId = bookingId;
-    currentInspVehicleId = vehicleId;
-    currentInspInvoiceId = invoiceId;
-    currentInspType = status === 'Confirmed' ? 'Check-Out' : 'Check-In';
-
-    document.getElementById('modal-insp-booking').textContent = '#' + bookingId;
-    document.getElementById('modal-insp-customer').textContent = customer;
-    document.getElementById('modal-insp-vehicle').textContent = vehicle;
-    document.getElementById('modal-insp-status').textContent = status;
-    document.getElementById('insp-type').value = currentInspType;
-    document.getElementById('modal-insp-type-label').textContent = currentInspType;
-    document.getElementById('insp-damage').value = '';
-    document.getElementById('insp-mileage').value = '';
-
-    const isCheckIn = currentInspType === 'Check-In';
-    document.getElementById('checkin-location-group').style.display = isCheckIn ? 'block' : 'none';
-    document.getElementById('checkin-late-group').style.display = isCheckIn ? 'block' : 'none';
-    document.getElementById('insp-late-fees').value = 0;
-
-    // Auto-calculate late fees if today > return date
-    if (isCheckIn) {
-        const today = new Date();
-        const returnDate = new Date(returnDateStr);
-        if (today > returnDate) {
-            const diffDays = Math.ceil((today - returnDate) / (1000 * 60 * 60 * 24));
-            document.getElementById('insp-late-fees').value = (diffDays * 500).toFixed(2); // PKR 500/day default
+            }).join('');
+        } catch (err) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Failed to load. Is the server running?</p></div>';
         }
     }
 
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('inspModal')).show();
-}
+    async function verifyDocument(docId, status) {
+        if (!confirm(`${status === 'Verified' ? 'Verify' : 'Reject'} this document?`)) return;
+        try {
+            const res = await fetch(`${BASE}/employee/documents/${docId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ verification_status: status, verified_by: userData.id })
+            });
+            if (res.ok) { loadDocuments(); }
+            else { const e = await res.json(); alert(e.message || 'Error'); }
+        } catch (err) { alert('Server error.'); }
+    }
 
-async function submitInspection() {
-    const mileage = document.getElementById('insp-mileage').value;
-    const fuel = document.getElementById('insp-fuel').value;
-    const damage = document.getElementById('insp-damage').value;
-    const locationId = document.getElementById('insp-location').value;
-    const lateFees = parseFloat(document.getElementById('insp-late-fees').value) || 0;
+    // ---- Invoices ----
+    async function loadInvoices() {
+        const tbody = document.getElementById('invoices-list');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2.5rem;">Loading...</td></tr>';
 
-    if (!mileage) { showToast('Please enter mileage reading.', 'warning'); return; }
-    if (currentInspType === 'Check-In' && !locationId) { showToast('Please select new vehicle location.', 'warning'); return; }
+        try {
+            const res  = await fetch(`${BASE}/employee/invoices`);
+            const invs = await res.json();
 
-    showLoading(true);
-    try {
+            if (!invs || invs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">No invoices found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = invs.map(inv => {
+                const licBadge = inv.verification_status === 'Verified'
+                    ? '<span class="badge badge-success">Verified ✓</span>'
+                    : inv.verification_status === 'Rejected'
+                        ? '<span class="badge badge-danger">Rejected</span>'
+                        : '<span class="badge badge-pending">Pending</span>';
+
+                const payBadge = inv.payment_status === 'Paid'
+                    ? '<span class="badge badge-success">Paid</span>'
+                    : '<span class="badge badge-danger">Unpaid</span>';
+
+                const canApprove = inv.verification_status === 'Verified' && inv.payment_status === 'Unpaid';
+
+                const actionBtn = inv.payment_status === 'Paid'
+                    ? '<span style="font-size:0.78rem;color:var(--muted);">Done</span>'
+                    : `<button class="btn-approve" onclick="approveInvoice(${inv.invoice_id})" ${canApprove ? '' : 'disabled'} title="${canApprove ? '' : 'License must be Verified'}">Approve</button>`;
+
+                return `
+                    <tr>
+                        <td><small style="color:var(--muted);">#${inv.invoice_id}</small></td>
+                        <td>
+                            <strong>${inv.full_name}</strong><br>
+                            <small style="color:var(--muted);">${inv.email}</small>
+                        </td>
+                        <td>${inv.make} ${inv.model}</td>
+                        <td>${licBadge}</td>
+                        <td>
+                            Rs.${inv.base_amount}
+                            ${inv.late_fees > 0 ? `<br><small style="color:var(--danger);">+Rs.${inv.late_fees} late</small>` : ''}
+                        </td>
+                        <td>${payBadge}</td>
+                        <td>${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--danger);">Failed to load.</td></tr>';
+        }
+    }
+
+    async function approveInvoice(id) {
+        if (!confirm('Mark this invoice as Paid?')) return;
+        const res = await fetch(`${BASE}/employee/invoices/${id}/approve`, { method: 'PUT', headers: {'Content-Type':'application/json'} });
+        if (res.ok) loadInvoices();
+        else { const e = await res.json(); alert(e.message || 'Error'); }
+    }
+
+    // ---- Inspections ----
+    async function loadInspections() {
+        await loadCheckout();
+        await loadCheckin();
+    }
+
+    async function loadCheckout() {
+        const c = document.getElementById('checkout-list');
+        c.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div>';
+        try {
+            const res = await fetch(`${BASE}/employee/bookings?status=Confirmed`);
+            const bookings = await res.json();
+            if (!bookings || bookings.length === 0) { c.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>No bookings awaiting check-out.</p></div>'; return; }
+            c.innerHTML = bookings.map(b => buildInspCard(b, 'Check-Out')).join('');
+        } catch { c.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Failed to load.</p></div>'; }
+    }
+
+    async function loadCheckin() {
+        const c = document.getElementById('checkin-list');
+        c.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div>';
+        try {
+            const res = await fetch(`${BASE}/employee/bookings?status=Active`);
+            const bookings = await res.json();
+            if (!bookings || bookings.length === 0) { c.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>No active bookings.</p></div>'; return; }
+            c.innerHTML = bookings.map(b => buildInspCard(b, 'Check-In')).join('');
+        } catch { c.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Failed to load.</p></div>'; }
+    }
+
+    function buildInspCard(b, type) {
+        const btnCls = type === 'Check-Out' ? 'btn-checkout' : 'btn-checkin';
+        const icon   = type === 'Check-Out' ? '🚀' : '🏁';
+        return `
+            <div class="insp-card">
+                <div class="insp-car">${b.make} ${b.model}</div>
+                <div class="insp-plate">${b.license_plate}</div>
+                <div class="insp-detail"><strong>Customer:</strong> ${b.full_name}</div>
+                <div class="insp-detail"><strong>Pickup:</strong> ${new Date(b.pickup_date).toLocaleDateString()} — ${b.pickup_location}</div>
+                <div class="insp-detail"><strong>Return:</strong> ${new Date(b.return_date).toLocaleDateString()} — ${b.dropoff_location}</div>
+                <button class="btn-insp ${btnCls}" onclick="openInspModal(${b.booking_id}, '${type}', ${b.vehicle_id}, '${b.make} ${b.model}')">
+                    ${icon} Start ${type}
+                </button>
+            </div>
+        `;
+    }
+
+    async function openInspModal(bookingId, type, vehicleId, name) {
+        document.getElementById('insp-booking-id').value = bookingId;
+        document.getElementById('insp-type').value       = type;
+        document.getElementById('insp-vehicle-id').value = vehicleId;
+        document.getElementById('inspectionModalTitle').innerText = `${type}: ${name}`;
+
+        const extra = document.getElementById('checkin-extra');
+        if (type === 'Check-In') {
+            extra.style.display = 'block';
+            const now = new Date();
+            document.getElementById('insp-actual-return').value =
+                new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+            await loadLocationDropdown();
+        } else {
+            extra.style.display = 'none';
+        }
+
+        document.getElementById('inspectionModal').classList.add('open');
+    }
+
+    async function loadLocationDropdown() {
+        try {
+            const res  = await fetch(`${BASE}/locations`);
+            const locs = await res.json();
+            const sel  = document.getElementById('insp-new-location');
+            sel.innerHTML = '<option value="" disabled selected>Select branch</option>';
+            locs.forEach(l => sel.innerHTML += `<option value="${l.location_id}">${l.branch_name}</option>`);
+        } catch {}
+    }
+
+    async function submitInspection() {
+        const bookingId = document.getElementById('insp-booking-id').value;
+        const type      = document.getElementById('insp-type').value;
+        const vehicleId = document.getElementById('insp-vehicle-id').value;
+        const mileage   = document.getElementById('insp-mileage').value;
+
+        if (!mileage) { alert('Please enter the mileage reading.'); return; }
+
         const payload = {
-            booking_id: currentInspBookingId,
-            employee_id: currentEmployee.user_id,
-            inspection_type: currentInspType,
-            fuel_level: fuel,
-            mileage_reading: parseInt(mileage),
-            damage_notes: damage,
-            vehicle_id: currentInspVehicleId,
-            new_location_id: locationId || null,
-            late_fees: lateFees,
-            invoice_id: currentInspInvoiceId
+            booking_id: bookingId, employee_id: userData.id,
+            inspection_type: type, fuel_level: document.getElementById('insp-fuel').value,
+            mileage_reading: mileage, damage_notes: document.getElementById('insp-damage').value,
+            vehicle_id: vehicleId
         };
 
-        const res = await fetch(`${API}/employee/inspections`, {
-            method: 'POST',
-            headers: authHeader(),
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
+        if (type === 'Check-In') {
+            payload.actual_return_date = document.getElementById('insp-actual-return').value;
+            payload.new_location_id    = document.getElementById('insp-new-location').value;
+            payload.late_fees          = document.getElementById('insp-late-fees').value || 0;
+            if (!payload.new_location_id) { alert('Please select a new vehicle location.'); return; }
+        }
 
-        if (res.ok) {
-            showToast(`${currentInspType} inspection saved successfully!`, 'success');
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('inspModal')).hide();
-            loadInspections();
-            loadDashboard();
-        } else { showToast(data.message || 'Failed to save inspection.', 'danger'); }
-    } catch(e) { showToast('Server error.', 'danger'); }
-    showLoading(false);
-}
+        try {
+            const res = await fetch(`${BASE}/employee/inspections`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeModal('inspectionModal');
+                alert(type === 'Check-Out' ? '✓ Vehicle marked as Rented.' : '✓ Vehicle marked as Available.');
+                loadInspections();
+            } else { const e = await res.json(); alert(e.message || 'Error'); }
+        } catch { alert('Server error.'); }
+    }
 
-// ─── Locations (for Check-In dropdown) ───────────────────────────────────────
-async function loadLocations() {
-    try {
-        const res = await fetch(`${API}/locations`, { headers: authHeader() });
-        const locs = await res.json();
-        const sel = document.getElementById('insp-location');
-        sel.innerHTML = '<option value="">Select branch...</option>';
-        locs.forEach(l => sel.innerHTML += `<option value="${l.location_id}">${l.branch_name} — ${l.address}</option>`);
-    } catch(e) { console.warn('Could not load locations'); }
-}
+    // ---- Init ----
+    loadDocuments();
 </script>
 </body>
 </html>

@@ -3,496 +3,902 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DriveFlow | Customer Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>DriveFlow | Customer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
     <style>
-        .nav-pills .nav-link.active { background-color: #0d6efd; }
-        .dashboard-container { min-height: 80vh; }
+        :root {
+            --bg:       #0a0a0f;
+            --surface:  #13131a;
+            --surface2: #1c1c28;
+            --border:   rgba(255,255,255,0.07);
+            --accent:   #c8f03c;
+            --accent2:  #5b5ef4;
+            --text:     #e8e8f0;
+            --muted:    #6b6b80;
+            --danger:   #ff4d6d;
+            --success:  #22d9a0;
+            --warning:  #f9b72d;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 55% 40% at 0% 0%, rgba(91,94,244,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 45% 35% at 100% 100%, rgba(200,240,60,0.07) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ---- Navbar ---- */
+        .df-navbar {
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .df-brand {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+            text-decoration: none;
+        }
+        .df-brand span { color: var(--accent); }
+        .welcome-text { font-size: 0.85rem; color: var(--muted); }
+        .btn-logout {
+            background: rgba(255,77,109,0.1);
+            color: var(--danger);
+            border: 1px solid rgba(255,77,109,0.25);
+            border-radius: 8px;
+            padding: 0.45rem 1rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: var(--danger); color: #fff; }
+
+        /* ---- Layout ---- */
+        .df-layout { display: flex; position: relative; z-index: 1; }
+
+        /* ---- Sidebar ---- */
+        .df-sidebar {
+            width: 220px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            min-height: calc(100vh - 58px);
+            padding: 1.5rem 0.75rem;
+            flex-shrink: 0;
+        }
+        .sidebar-section {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            font-weight: 600;
+            padding: 0 0.75rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+        .df-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            transition: all 0.2s;
+            margin-bottom: 0.15rem;
+        }
+        .df-nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .df-nav-link.active {
+            background: rgba(200,240,60,0.1);
+            color: var(--accent);
+            border-left: 2px solid var(--accent);
+        }
+        .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+        /* ---- Main ---- */
+        .df-main { flex: 1; padding: 2rem; overflow-x: hidden; }
+
+        /* ---- Tab panes ---- */
+        .tab-pane { display: none; animation: fadeUp 0.4s ease both; }
+        .tab-pane.active { display: block; }
+
+        /* ---- Page title ---- */
+        .page-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* ---- Filters bar ---- */
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-bar label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+        select.df-select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 0.6rem 0.9rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        select.df-select:focus { border-color: var(--accent); }
+        select.df-select option { background: var(--surface2); }
+
+        /* ---- Fleet cards ---- */
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .car-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .car-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(91,94,244,0.04), transparent);
+            pointer-events: none;
+        }
+        .car-card:hover {
+            border-color: rgba(200,240,60,0.25);
+            box-shadow: 0 0 20px rgba(200,240,60,0.1);
+        }
+        .car-make { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .car-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.75rem; }
+        .car-price { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--accent); }
+        .car-price span { font-size: 0.75rem; font-weight: 400; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+        .car-color-dot {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .btn-book {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.65rem;
+            background: var(--accent);
+            color: #0a0a0f;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-book:hover { background: #d4f55a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,240,60,0.3); }
+
+        /* ---- Table ---- */
+        .df-table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        thead th {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            text-align: left;
+        }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        tbody td {
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* ---- Badges ---- */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.65rem;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-pending  { background: rgba(249,183,45,0.12); color: var(--warning); border: 1px solid rgba(249,183,45,0.25); }
+        .badge-success  { background: rgba(34,217,160,0.12); color: var(--success); border: 1px solid rgba(34,217,160,0.25); }
+        .badge-danger   { background: rgba(255,77,109,0.12); color: var(--danger);  border: 1px solid rgba(255,77,109,0.25); }
+        .badge-indigo   { background: rgba(91,94,244,0.12);  color: #8b8ef8;        border: 1px solid rgba(91,94,244,0.25); }
+        .badge-muted    { background: rgba(255,255,255,0.05); color: var(--muted);  border: 1px solid var(--border); }
+
+        /* ---- Invoice cards ---- */
+        .invoice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .invoice-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .invoice-card::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--accent2);
+            border-radius: 3px 0 0 3px;
+        }
+        .invoice-card.paid::after { background: var(--success); }
+        .invoice-card.unpaid::after { background: var(--danger); }
+        .invoice-id { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.5rem; }
+        .invoice-car { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.35rem; }
+        .invoice-amount { font-size: 1.5rem; font-family: 'Syne', sans-serif; font-weight: 800; color: var(--accent); }
+
+        /* ---- Profile form ---- */
+        .profile-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 520px;
+        }
+        .df-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 0.75rem 1rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            margin-bottom: 1rem;
+        }
+        .df-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,240,60,0.1); }
+        .df-input::placeholder { color: var(--muted); }
+        .df-input[readonly] { opacity: 0.5; cursor: not-allowed; }
+        .df-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+        .field-wrap { margin-bottom: 1rem; }
+        .btn-save {
+            background: var(--accent);
+            color: #0a0a0f;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-save:hover { background: #d4f55a; box-shadow: 0 6px 20px rgba(200,240,60,0.25); }
+
+        /* ---- Documents form ---- */
+        .doc-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 520px;
+        }
+        .doc-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.6; }
+
+        /* ---- Modal ---- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 460px;
+            animation: fadeUp 0.35s ease both;
+            position: relative;
+        }
+        .modal-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem; right: 1rem;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .modal-close:hover { color: var(--text); }
+        .btn-confirm {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--accent);
+            color: #0a0a0f;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.75rem;
+        }
+        .btn-confirm:hover { background: #d4f55a; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        /* ---- Empty state ---- */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+        }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 0.75rem; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ---- License status row ---- */
+        .license-status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .license-number { flex: 1; font-size: 0.9rem; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-    <nav class="navbar navbar-dark bg-dark shadow">
-        <div class="container">
-            <a class="navbar-brand" href="#">🚗 DriveFlow</a>
-            <div class="d-flex align-items-center">
-                <span class="text-light me-3" id="welcomeName">Welcome, User</span>
-                <button class="btn btn-outline-danger btn-sm" onclick="logout()">Logout</button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container my-5 dashboard-container">
-        <div class="row">
-            <div class="col-md-3 mb-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist">
-                            <button class="nav-link active mb-2" id="nav-fleet-tab" data-bs-toggle="pill" data-bs-target="#nav-fleet" type="button">Book a Vehicle</button>
-                            <button class="nav-link mb-2" id="nav-trips-tab" data-bs-toggle="pill" data-bs-target="#nav-trips" type="button" onclick="loadMyBookings()">My Trips</button>
-                            <button class="nav-link mb-2" id="nav-invoices-tab" data-bs-toggle="pill" data-bs-target="#nav-invoices" type="button" onclick="loadInvoices()">My Invoices</button>
-                            <button class="nav-link" id="nav-docs-tab" data-bs-toggle="pill" data-bs-target="#nav-docs" type="button">Documents</button>
-                            <button class="nav-link" id="nav-profile-tab" data-bs-toggle="pill" data-bs-target="#nav-profile" type="button" onclick="loadProfile()">Edit Profile</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-9">
-                <div class="tab-content" id="v-pills-tabContent">
-                    
-                    <div class="tab-pane fade show active" id="nav-fleet" role="tabpanel">
-                        <h4 class="mb-4">Available Fleet</h4>
-                        <div class="row mb-4 g-2 bg-white p-3 rounded shadow-sm">
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Sort by Price</label>
-                                <select id="sortPrice" class="form-select" onchange="loadFleet()">
-                                    <option value="none">Default</option>
-                                    <option value="low">Price: Low to High</option>
-                                    <option value="high">Price: High to Low</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Filter by Color</label>
-                                <select id="filterColor" class="form-select" onchange="loadFleet()">
-                                    <option value="all">All Colors</option>
-                                    <option value="Black">Black</option>
-                                    <option value="White">White</option>
-                                    <option value="Silver">Silver</option>
-                                    <option value="Red">Red</option>
-                                    <option value="Blue">Blue</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row g-4" id="fleet-container">
-                            </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="nav-trips" role="tabpanel">
-                        <h4 class="mb-4">Your Booking History</h4>
-                        <div class="table-responsive">
-                            <table class="table table-hover bg-white rounded shadow-sm">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Car</th>
-                                        <th>Locations</th>
-                                        <th>Pickup</th>
-                                        <th>Return</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="bookings-list">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="nav-invoices" role="tabpanel">
-                        <h4 class="mb-4">Billing & Invoices</h4>
-                        <div id="invoices-list" class="row">
-                            </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="nav-docs" role="tabpanel">
-                        <h4 class="mb-4">Identity Verification</h4>
-                        <div class="card border-0 shadow-sm col-md-8">
-                            <div class="card-body">
-                                <p class="text-muted">Please provide your details and upload a clear photo of your document for verification.</p>
-                                
-                                <form id="docForm">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small">Document Type</label>
-                                        <select id="doc-type" class="form-select" required onchange="toggleLicenseField()">
-                                            <option value="Driving License">Driving License</option>
-                                            <option value="CNIC">National ID Card</option>
-                                            <option value="Passport">Passport</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Only shown for Driving License -->
-                                    <div class="mb-3" id="license-number-field">
-                                        <label class="form-label fw-bold small">License Number</label>
-                                        <input type="text" id="doc-value" class="form-control" placeholder="Enter your driving license number">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small">Expiry Date</label>
-                                        <input type="date" id="doc-expiry" class="form-control" required>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small">Upload File (Image/PDF)</label>
-                                        <input type="file" id="doc-file" class="form-control" accept="image/*,.pdf" required>
-                                    </div>
-
-                                    <button type="submit" class="btn btn-dark w-100">Submit for Verification</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>                
-
-                    <div class="tab-pane fade" id="nav-profile" role="tabpanel">
-                        <h4 class="mb-4">Profile Settings</h4>
-                        <div class="card border-0 shadow-sm col-md-8">
-                            <div class="card-body">
-                                <form id="profileForm">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted small">Email Address (Read-only)</label>
-                                        <input type="email" id="prof-email" class="form-control bg-light" readonly>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Full Name</label>
-                                        <input type="text" id="prof-name" class="form-control" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Phone Number</label>
-                                        <input type="text" id="prof-phone" class="form-control" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted small fw-bold">Driving License Information</label>
-                                        <div class="input-group">
-                                            <input type="text" id="prof-license" class="form-control bg-light" placeholder="No license uploaded" readonly>
-                                            <span id="license-status-badge" class="input-group-text small border-start-0">
-                                                Checking...
-                                            </span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mt-1 px-1">
-                                            <small class="text-muted">Expiry: <span id="prof-expiry" class="fw-bold">N/A</span></small>
-                                            <small id="verified-by-text" class="text-muted italic" style="font-size: 0.75rem;"></small>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-        <div class="modal fade" id="bookingModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalCarName">Book Vehicle</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="confirmBookingForm">
-                            <input type="hidden" id="modalVehicleId">
-                            <div class="mb-3">
-                                <label>Pickup Location</label>
-                                <select id="pickupLoc" class="form-select" required>
-                                    <option value="" selected disabled>Select Pickup Location</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label>Dropoff Location</label>
-                                    <select id="dropoffLoc" class="form-select" required>
-                                        <option value="" selected disabled>Select Drop-off Location</option>
-                                    </select>
-                            </div>
-                            <div class="row">
-                                <div class="col"><label>Pickup Date</label><input type="date" id="pDate" class="form-control" required></div>
-                                <div class="col"><label>Return Date</label><input type="date" id="rDate" class="form-control" required></div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-success w-100" onclick="submitBooking()">Confirm Reservation</button>
-                    </div>
-                </div>
-            </div>
-        </div>        
+<!-- Navbar -->
+<nav class="df-navbar">
+    <a class="df-brand" href="#">Drive<span>Flow</span></a>
+    <div style="display:flex;align-items:center;gap:1.25rem;">
+        <span class="welcome-text" id="welcomeName">Welcome back</span>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
     </div>
+</nav>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<div class="df-layout">
 
-    <script>
-        // 1. Check Login Status
-        const userData = JSON.parse(localStorage.getItem('user'));
-        if (!userData) {
-            window.location.href = 'login.html';
-        } else {
-            document.getElementById('welcomeName').innerText = `Welcome, ${userData.full_name}`;
-            // Pre-fill profile form
-            document.getElementById('prof-name').value = userData.full_name;
-        }
+    <!-- Sidebar -->
+    <aside class="df-sidebar">
+        <div class="sidebar-section">Menu</div>
+        <button class="df-nav-link active" onclick="showTab('fleet', this)">
+            <span class="nav-icon">🚗</span> Book a Vehicle
+        </button>
+        <button class="df-nav-link" onclick="showTab('trips', this); loadMyBookings()">
+            <span class="nav-icon">📋</span> My Trips
+        </button>
+        <button class="df-nav-link" onclick="showTab('invoices', this); loadInvoices()">
+            <span class="nav-icon">🧾</span> My Invoices
+        </button>
+        <button class="df-nav-link" onclick="showTab('docs', this)">
+            <span class="nav-icon">📄</span> Documents
+        </button>
+        <div class="sidebar-section" style="margin-top:1.5rem;">Account</div>
+        <button class="df-nav-link" onclick="showTab('profile', this); loadProfile()">
+            <span class="nav-icon">⚙️</span> Edit Profile
+        </button>
+    </aside>
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = 'login.html';
-        }
+    <!-- Main content -->
+    <main class="df-main">
 
-        // 2. Load Available Vehicles (Fleet)
-        async function loadFleet() {
-            const sort = document.getElementById('sortPrice').value;
-            const color = document.getElementById('filterColor').value;
+        <!-- ============== TAB: Fleet ============== -->
+        <div class="tab-pane active" id="pane-fleet">
+            <div class="page-title">🚗 Available Fleet</div>
 
-            // Notice the change from /vehicles to /fleet
-            const url = `http://localhost:5000/fleet?sort=${sort}&color=${color}`;
-            
-            const res = await fetch(url);
+            <div class="filter-bar">
+                <div>
+                    <label>Sort by Price</label>
+                    <select class="df-select" id="sortPrice" onchange="loadFleet()">
+                        <option value="none">Default</option>
+                        <option value="low">Low → High</option>
+                        <option value="high">High → Low</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Filter by Color</label>
+                    <select class="df-select" id="filterColor" onchange="loadFleet()">
+                        <option value="all">All Colors</option>
+                        <option value="Black">Black</option>
+                        <option value="White">White</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Red">Red</option>
+                        <option value="Blue">Blue</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="fleet-grid" id="fleet-container">
+                <div class="empty-state"><div class="icon">⏳</div><p>Loading vehicles...</p></div>
+            </div>
+        </div>
+
+        <!-- ============== TAB: Trips ============== -->
+        <div class="tab-pane" id="pane-trips">
+            <div class="page-title">📋 My Trips</div>
+            <div class="df-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Route</th>
+                            <th>Pickup</th>
+                            <th>Return</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-list">
+                        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:3rem;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============== TAB: Invoices ============== -->
+        <div class="tab-pane" id="pane-invoices">
+            <div class="page-title">🧾 My Invoices</div>
+            <div class="invoice-grid" id="invoices-list">
+                <div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div>
+            </div>
+        </div>
+
+        <!-- ============== TAB: Documents ============== -->
+        <div class="tab-pane" id="pane-docs">
+            <div class="page-title">📄 Identity Verification</div>
+            <div class="doc-card">
+                <p>Upload a clear photo or PDF of your document. Our team will verify it within 24 hours.</p>
+
+                <div class="field-wrap">
+                    <span class="df-label">Document Type</span>
+                    <select class="df-select" id="doc-type" style="width:100%;margin-bottom:0;">
+                        <option value="Driving License">Driving License</option>
+                        <option value="ID">National ID Card</option>
+                        <option value="Passport">Passport</option>
+                    </select>
+                </div>
+
+                <div class="field-wrap" style="margin-top:1rem;">
+                    <span class="df-label">Document Number</span>
+                    <input class="df-input" type="text" id="doc-value" placeholder="License / ID number" style="margin-bottom:0;">
+                </div>
+
+                <div class="field-wrap" style="margin-top:1rem;">
+                    <span class="df-label">Expiry Date</span>
+                    <input class="df-input" type="date" id="doc-expiry" style="margin-bottom:0;">
+                </div>
+
+                <div class="field-wrap" style="margin-top:1rem;">
+                    <span class="df-label">Upload File (Image / PDF)</span>
+                    <input class="df-input" type="file" id="doc-file" accept="image/*,.pdf" style="margin-bottom:0;">
+                </div>
+
+                <button class="btn-save" style="margin-top:1.5rem;width:100%;" onclick="submitDocument()">Submit for Verification</button>
+                <div id="doc-message" style="margin-top:0.75rem;font-size:0.85rem;text-align:center;color:var(--muted);"></div>
+            </div>
+        </div>
+
+        <!-- ============== TAB: Profile ============== -->
+        <div class="tab-pane" id="pane-profile">
+            <div class="page-title">⚙️ Profile Settings</div>
+            <div class="profile-card">
+                <div class="field-wrap">
+                    <span class="df-label">Email (read-only)</span>
+                    <input class="df-input" type="email" id="prof-email" readonly placeholder="—">
+                </div>
+                <div class="field-wrap">
+                    <span class="df-label">Full Name</span>
+                    <input class="df-input" type="text" id="prof-name" placeholder="Your name" required>
+                </div>
+                <div class="field-wrap">
+                    <span class="df-label">Phone Number</span>
+                    <input class="df-input" type="text" id="prof-phone" placeholder="+92 300 0000000">
+                </div>
+
+                <div class="field-wrap">
+                    <span class="df-label">Driving License</span>
+                    <div class="license-status-row">
+                        <span class="license-number" id="prof-license">Not uploaded</span>
+                        <span id="license-status-badge" class="badge badge-muted">—</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:0 2px;margin-top:0.3rem;">
+                        <small style="color:var(--muted);font-size:0.75rem;">Expiry: <strong id="prof-expiry">N/A</strong></small>
+                        <small id="verified-by-text" style="font-size:0.73rem;color:var(--muted);"></small>
+                    </div>
+                </div>
+
+                <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+                <div id="profile-message" style="margin-top:0.75rem;font-size:0.85rem;text-align:center;color:var(--muted);"></div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ============== Booking Modal ============== -->
+<div class="modal-overlay" id="bookingModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('bookingModal')">✕</button>
+        <div class="modal-title" id="modalCarName">Book Vehicle</div>
+        <input type="hidden" id="modalVehicleId">
+
+        <div class="field-wrap">
+            <span class="df-label">Pickup Location</span>
+            <select class="df-select" id="pickupLoc" style="width:100%;">
+                <option value="" disabled selected>Select location</option>
+            </select>
+        </div>
+        <div class="field-wrap" style="margin-top:0.75rem;">
+            <span class="df-label">Drop-off Location</span>
+            <select class="df-select" id="dropoffLoc" style="width:100%;">
+                <option value="" disabled selected>Select location</option>
+            </select>
+        </div>
+        <div class="row-2" style="margin-top:0.75rem;">
+            <div class="field-wrap">
+                <span class="df-label">Pickup Date</span>
+                <input class="df-input" type="date" id="pDate" style="margin-bottom:0;">
+            </div>
+            <div class="field-wrap">
+                <span class="df-label">Return Date</span>
+                <input class="df-input" type="date" id="rDate" style="margin-bottom:0;">
+            </div>
+        </div>
+
+        <button class="btn-confirm" onclick="submitBooking()">Confirm Reservation →</button>
+    </div>
+</div>
+
+<script>
+    // ---- Auth ----
+    const userData = JSON.parse(localStorage.getItem('user'));
+    if (!userData || userData.role !== 'Customer') window.location.href = 'login.html';
+    else document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+    const BASE = 'http://localhost:5000';
+
+    // ---- Tab switching ----
+    function showTab(name, btn) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.df-nav-link').forEach(b => b.classList.remove('active'));
+        document.getElementById('pane-' + name).classList.add('active');
+        if (btn) btn.classList.add('active');
+    }
+
+    // ---- Fleet ----
+    async function loadFleet() {
+        const sort  = document.getElementById('sortPrice').value;
+        const color = document.getElementById('filterColor').value;
+        const container = document.getElementById('fleet-container');
+        container.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading vehicles...</p></div>';
+
+        try {
+            const res  = await fetch(`${BASE}/fleet?sort=${sort}&color=${color}`);
             const cars = await res.json();
-            const container = document.getElementById('fleet-container');
-            
+
             if (!cars || cars.length === 0) {
-                container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No cars match these filters.</div>';
+                container.innerHTML = '<div class="empty-state"><div class="icon">🚫</div><p>No vehicles match these filters.</p></div>';
                 return;
             }
+
+            const colorMap = {
+                Black:'#222', White:'#eee', Silver:'#aaa', Red:'#e55', Blue:'#55e', Gold:'#d4a017'
+            };
 
             container.innerHTML = cars.map(car => `
-                <div class="col-md-6">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h5 class="mb-0">${car.make} ${car.model}</h5>
-                                <span class="badge bg-light text-dark border small">${car.color}</span>
-                            </div>
-                            <p class="text-muted small mb-2">${car.category} | ${car.branch_name}</p>
-                            <p class="text-primary fw-bold mb-0">Rs.${car.daily_rate}/day</p>
-                            <button class="btn btn-sm btn-dark mt-3 w-100" 
-                                onclick="openBookingModal(${car.vehicle_id}, '${car.make} ${car.model}')">
-                                Book Now
-                            </button>
-                        </div>
+                <div class="car-card">
+                    <div class="car-make">${car.make} ${car.model}</div>
+                    <div class="car-meta">
+                        <span class="car-color-dot" style="background:${colorMap[car.color] || '#888'};"></span>
+                        ${car.color || '—'} &nbsp;·&nbsp; ${car.category} &nbsp;·&nbsp; ${car.branch_name}
                     </div>
+                    <div class="car-price">Rs.${car.daily_rate}<span>/day</span></div>
+                    <button class="btn-book" onclick="openBookingModal(${car.vehicle_id}, '${car.make} ${car.model}')">
+                        Book Now →
+                    </button>
                 </div>
             `).join('');
+        } catch (err) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Could not load fleet. Is the server running?</p></div>';
         }
-        // 3. Booking Modal Logic
-        function openBookingModal(id, name) {
-            document.getElementById('modalVehicleId').value = id;
-            document.getElementById('modalCarName').innerText = `Book ${name}`;
-            new bootstrap.Modal(document.getElementById('bookingModal')).show();
-        }
+    }
 
-        async function submitBooking() {
-            const bookingData = {
-                user_id: userData.user_id,
-                vehicle_id: document.getElementById('modalVehicleId').value,
-                pickup_location_id: document.getElementById('pickupLoc').value,
-                dropoff_location_id: document.getElementById('dropoffLoc').value,
-                pickup_date: document.getElementById('pDate').value,
-                return_date: document.getElementById('rDate').value
-            };
+    function openBookingModal(id, name) {
+        document.getElementById('modalVehicleId').value = id;
+        document.getElementById('modalCarName').innerText = `Book — ${name}`;
+        document.getElementById('bookingModal').classList.add('open');
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-            const res = await fetch('http://localhost:5000/bookings', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(bookingData)
-            });
+    async function submitBooking() {
+        const data = {
+            user_id:             userData.id,
+            vehicle_id:          document.getElementById('modalVehicleId').value,
+            pickup_location_id:  document.getElementById('pickupLoc').value,
+            dropoff_location_id: document.getElementById('dropoffLoc').value,
+            pickup_date:         document.getElementById('pDate').value,
+            return_date:         document.getElementById('rDate').value
+        };
 
-            if(res.ok) {
-                alert("Booking Successful! Invoice generated.");
-                location.reload();
-            } else {
-                const err = await res.json();
-                alert(err.message);
-            }
+        if (!data.pickup_location_id || !data.dropoff_location_id || !data.pickup_date || !data.return_date) {
+            alert('Please fill in all booking fields.');
+            return;
         }
 
-        // 4. Load My Trips
-        async function loadMyBookings() {
-            const res = await fetch(`http://localhost:5000/my-bookings/${userData.user_id}`);
-            const bookings = await res.json();
-            const list = document.getElementById('bookings-list');
-            
-            if (!bookings || bookings.length === 0 || bookings.message) {
-                list.innerHTML = '<tr><td colspan="5" class="text-center">No trips found.</td></tr>';
-                return;
-            }
+        const res = await fetch(`${BASE}/bookings`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
 
-            list.innerHTML = bookings.map(b => `
-                <tr>
-                    <td>
-                        <strong>${b.make} ${b.model}</strong><br>
-                        <small class="text-muted">${b.license_plate}</small>
-                    </td>
-                    <td>
-                        <span class="small">From: ${b.pickup_location}</span><br>
-                        <span class="small">To: ${b.dropoff_location}</span>
-                    </td>
-                    <td>${new Date(b.pickup_date).toLocaleDateString()}</td>
-                    <td>${new Date(b.return_date).toLocaleDateString()}</td>
-                    <td><span class="badge ${b.status === 'Pending' ? 'bg-warning text-dark' : 'bg-success'}">${b.status}</span></td>
-                </tr>
-            `).join('');
+        if (res.ok) {
+            closeModal('bookingModal');
+            alert('Booking confirmed! Invoice generated.');
+            loadFleet();
+        } else {
+            const err = await res.json();
+            alert(err.message || 'Booking failed.');
         }
-        
-        // 5. Load My Invoices
-        async function loadInvoices() {
-            const res = await fetch(`http://localhost:5000/invoices/${userData.user_id}`);
-            const invoices = await res.json();
-            const container = document.getElementById('invoices-list');
-            
-            if (!invoices || invoices.length === 0) {
-                container.innerHTML = '<div class="alert alert-info w-100">No invoices generated yet.</div>';
-                return;
-            }
+    }
 
-            container.innerHTML = invoices.map(inv => `
-                <div class="col-md-6 mb-3">
-                    <div class="card shadow-sm border-start border-primary border-4 h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="text-muted small">INV #${inv.invoice_id}</h6>
-                                <span class="badge ${inv.payment_status === 'Paid' ? 'bg-success' : 'bg-danger'}">${inv.payment_status}</span>
-                            </div>
-                            <h5 class="card-title">${inv.make} ${inv.model}</h5>
-                            <p class="mb-1 text-primary fw-bold">Total: Rs.${inv.base_amount}</p>
-                            <p class="mb-0 text-muted small">Deposit: Rs.${inv.security_deposit}</p>
-                        </div>
+    // ---- My Trips ----
+    async function loadMyBookings() {
+        const tbody = document.getElementById('bookings-list');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
+
+        const res      = await fetch(`${BASE}/my-bookings/${userData.id}`);
+        const bookings = await res.json();
+
+        if (!bookings || bookings.length === 0 || bookings.message) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">No trips yet.</td></tr>';
+            return;
+        }
+
+        const badgeMap = {
+            Pending:   'badge-pending',
+            Confirmed: 'badge-indigo',
+            Active:    'badge-indigo',
+            Completed: 'badge-success',
+            Cancelled: 'badge-danger'
+        };
+
+        tbody.innerHTML = bookings.map(b => `
+            <tr>
+                <td>
+                    <strong>${b.make} ${b.model}</strong><br>
+                    <small style="color:var(--muted);">${b.license_plate}</small>
+                </td>
+                <td>
+                    <span style="font-size:0.8rem;">📍 ${b.pickup_location}</span><br>
+                    <span style="font-size:0.8rem;color:var(--muted);">→ ${b.dropoff_location}</span>
+                </td>
+                <td>${new Date(b.pickup_date).toLocaleDateString()}</td>
+                <td>${new Date(b.return_date).toLocaleDateString()}</td>
+                <td><span class="badge ${badgeMap[b.status] || 'badge-muted'}">${b.status}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    // ---- Invoices ----
+    async function loadInvoices() {
+        const container = document.getElementById('invoices-list');
+        container.innerHTML = '';
+
+        const res      = await fetch(`${BASE}/invoices/${userData.id}`);
+        const invoices = await res.json();
+
+        if (!invoices || invoices.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">🧾</div><p>No invoices generated yet.</p></div>';
+            return;
+        }
+
+        container.innerHTML = invoices.map(inv => `
+            <div class="invoice-card ${inv.payment_status === 'Paid' ? 'paid' : 'unpaid'}">
+                <div class="invoice-id">Invoice #${inv.invoice_id} &nbsp;·&nbsp; ${new Date(inv.issued_at).toLocaleDateString()}</div>
+                <div class="invoice-car">${inv.make} ${inv.model}</div>
+                <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:0.75rem;">
+                    <div>
+                        <div class="invoice-amount">Rs.${inv.base_amount}</div>
+                        ${inv.late_fees > 0 ? `<small style="color:var(--danger);">+ Rs.${inv.late_fees} late fee</small>` : ''}
+                        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">Deposit: Rs.${inv.security_deposit}</div>
                     </div>
+                    <span class="badge ${inv.payment_status === 'Paid' ? 'badge-success' : 'badge-danger'}">${inv.payment_status}</span>
                 </div>
-            `).join('');
-        }
-        
-        // 6. Load Profile Details from Server
-        async function loadProfile() {
-            try {
-                const res = await fetch(`http://localhost:5000/user/${userData.user_id}`);
-                const user = await res.json();
+            </div>
+        `).join('');
+    }
 
-                document.getElementById('prof-name').value = user.full_name || '';
-                document.getElementById('prof-email').value = user.email || '';
-                document.getElementById('prof-phone').value = user.phone_number || '';
+    // ---- Profile ----
+    async function loadProfile() {
+        try {
+            const res  = await fetch(`${BASE}/user/${userData.id}`);
+            const user = await res.json();
 
-                const licInput = document.getElementById('prof-license');
-                const statusBadge = document.getElementById('license-status-badge');
-                const expirySpan = document.getElementById('prof-expiry');
-                const verifyText = document.getElementById('verified-by-text');
+            document.getElementById('prof-name').value  = user.full_name    || '';
+            document.getElementById('prof-email').value = user.email        || '';
+            document.getElementById('prof-phone').value = user.phone_number || '';
+            document.getElementById('prof-license').innerText = user.document_number || 'Not uploaded';            document.getElementById('prof-expiry').innerText  = user.expiry_date
+                ? new Date(user.expiry_date).toLocaleDateString() : 'N/A';
 
-                licInput.value = user.document_number  || 'Not Provided';
-                expirySpan.innerText = user.expiry_date
-                    ? new Date(user.expiry_date).toLocaleDateString()
-                    : 'N/A';
+            const badge = document.getElementById('license-status-badge');
+            const verifyText = document.getElementById('verified-by-text');
 
-                if (user.verification_status === 'Verified') {
-                    statusBadge.className = 'input-group-text bg-success text-white small';
-                    statusBadge.innerText = 'Verified ✅';
-                    verifyText.innerText = `Verified by: ${user.verified_by_employee || 'System'}`;
-                } else if (user.verification_status === 'Pending') {
-                    statusBadge.className = 'input-group-text bg-warning text-dark small';
-                    statusBadge.innerText = 'Pending ⏳';
-                    verifyText.innerText = 'Awaiting employee review';
-                } else if (user.verification_status === 'Rejected') {
-                    statusBadge.className = 'input-group-text bg-danger text-white small';
-                    statusBadge.innerText = 'Rejected ❌';
-                    verifyText.innerText = 'Please re-upload a valid document';
-                } else {
-                    statusBadge.className = 'input-group-text bg-secondary text-white small';
-                    statusBadge.innerText = 'No Document';
-                    verifyText.innerText = 'Upload a document for verification';
-                }
-            } catch (err) {
-                console.error("Error loading profile:", err);
-            }
-        }
-        // 7. Handle Profile Updates (Saving changes)
-        document.getElementById('profileForm').onsubmit = async (e) => {
-            e.preventDefault();
-
-            // We only collect full_name and phone_number now. 
-            // license_number is handled via the Documents table/Employee verification.
-            const updatedData = {
-                full_name: document.getElementById('prof-name').value,
-                phone_number: document.getElementById('prof-phone').value
-            };
-
-            const res = await fetch(`http://localhost:5000/user/${userData.user_id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
-            });
-
-            if (res.ok) {
-                alert("Profile updated successfully!");
-
-                // Update local session data so the "Welcome" name updates too
-                userData.full_name = updatedData.full_name;
-                localStorage.setItem('user', JSON.stringify(userData));
-                
-                const welcomeElem = document.getElementById('welcomeName');
-                if (welcomeElem) {
-                    welcomeElem.innerText = `Welcome, ${userData.full_name}`;
-                }
+            if (user.verification_status === 'Verified') {
+                badge.className = 'badge badge-success';
+                badge.innerText = 'Verified ✓';
+                verifyText.innerText = `Verified by Employee #${user.verified_by_employee || '—'}`;
+            } else if (user.verification_status === 'Pending') {
+                badge.className = 'badge badge-pending';
+                badge.innerText = 'Pending ⏳';
+                verifyText.innerText = 'Awaiting review';
+            } else if (user.verification_status === 'Rejected') {
+                badge.className = 'badge badge-danger';
+                badge.innerText = 'Rejected ✗';
+                verifyText.innerText = 'Please re-upload';
             } else {
-                const errorData = await res.json();
-                alert("Failed to update profile: " + (errorData.message || "Unknown error"));
+                badge.className = 'badge badge-muted';
+                badge.innerText = 'No document';
+                verifyText.innerText = '';
             }
+        } catch (err) { console.error(err); }
+    }
+
+    async function saveProfile() {
+        const body = {
+            full_name:    document.getElementById('prof-name').value,
+            phone_number: document.getElementById('prof-phone').value
         };
-        
-        // 8. Handle Document Uploads
-        document.getElementById('docForm').onsubmit = async (e) => {
-            e.preventDefault();
 
-            const docType = document.getElementById('doc-type').value;
-            const fileInput = document.getElementById('doc-file');
-            const formData = new FormData();
+        const res = await fetch(`${BASE}/user/${userData.id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
 
-            formData.append('user_id', userData.user_id);
-            formData.append('document_type', docType);
-            formData.append('document_number', document.getElementById('doc-value').value);
-            formData.append('expiry_date', document.getElementById('doc-expiry').value);
-            formData.append('documentFile', fileInput.files[0]);
-
-            const res = await fetch('http://localhost:5000/documents', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (res.ok) {
-                alert("Document submitted! It will appear in your profile once verified.");
-                e.target.reset();
-                toggleLicenseField();
-                if (typeof loadProfile === "function") loadProfile();
-            } else {
-                const err = await res.json();
-                alert("Upload failed: " + (err.message || "Unknown error"));
-            }
-        };
-        
-        // 8. Load locations
-        async function loadLocations() {
-            try {
-                const res = await fetch('http://localhost:5000/locations');
-                const locations = await res.json();
-                
-                const pickupSelect = document.getElementById('pickupLoc');
-                const dropoffSelect = document.getElementById('dropoffLoc');
-
-                // Reset dropdowns to just the placeholder
-                const placeholder = '<option value="" selected disabled>Select Location</option>';
-                pickupSelect.innerHTML = placeholder;
-                dropoffSelect.innerHTML = placeholder;
-
-                // Loop through database results and add options
-                locations.forEach(loc => {
-                    const option = `<option value="${loc.location_id}">${loc.branch_name}</option>`;
-                    pickupSelect.innerHTML += option;
-                    dropoffSelect.innerHTML += option;
-                });
-            } catch (error) {
-                console.error("Failed to load locations:", error);
-            }
+        const msg = document.getElementById('profile-message');
+        if (res.ok) {
+            msg.style.color = 'var(--success)';
+            msg.innerText = '✓ Profile updated!';
+            userData.name = body.full_name;
+            localStorage.setItem('user', JSON.stringify(userData));
+            document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+        } else {
+            msg.style.color = 'var(--danger)';
+            msg.innerText = 'Update failed.';
         }
+    }
 
-        // Show license number field only for Driving License
-        function toggleLicenseField() {
-            const docType = document.getElementById('doc-type').value;
-            const licField = document.getElementById('license-number-field');
-            licField.style.display = docType === 'Driving License' ? 'block' : 'none';
-            document.getElementById('doc-value').required = (docType === 'Driving License');
+    // ---- Documents ----
+    async function submitDocument() {
+        const formData = new FormData();
+        const fileInput = document.getElementById('doc-file');
+
+        formData.append('user_id',       userData.id);
+        formData.append('document_type', document.getElementById('doc-type').value);
+        formData.append('document_number', document.getElementById('doc-value').value);
+        formData.append('expiry_date',   document.getElementById('doc-expiry').value);
+        if (fileInput.files[0]) formData.append('documentFile', fileInput.files[0]);
+
+        const res = await fetch(`${BASE}/documents`, { method: 'POST', body: formData });
+        const msg = document.getElementById('doc-message');
+
+        if (res.ok) {
+            msg.style.color = 'var(--success)';
+            msg.innerText = '✓ Document submitted for verification!';
+        } else {
+            const err = await res.json();
+            msg.style.color = 'var(--danger)';
+            msg.innerText = err.message || 'Upload failed.';
         }
-        // Run once on load to set initial state
-        toggleLicenseField();
-        // Call this function at the bottom of your script so it runs on page load
-        loadLocations();
+    }
 
-        // Initial Load
-        loadFleet();
-    </script>
+    // ---- Locations ----
+    async function loadLocations() {
+        try {
+            const res  = await fetch(`${BASE}/locations`);
+            const locs = await res.json();
+            const ph = '<option value="" disabled selected>Select location</option>';
+            const opts = locs.map(l => `<option value="${l.location_id}">${l.branch_name}</option>`).join('');
+            document.getElementById('pickupLoc').innerHTML  = ph + opts;
+            document.getElementById('dropoffLoc').innerHTML = ph + opts;
+        } catch (err) { console.error('Locations failed:', err); }
+    }
+
+    // ---- Init ----
+    loadFleet();
+    loadLocations();
+</script>
 </body>
 </html>
