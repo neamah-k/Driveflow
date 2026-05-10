@@ -395,6 +395,20 @@
                         <label>Password</label>
                         <input class="df-input" type="password" id="emp-password" placeholder="Password">
                     </div>
+                    <div class="fg fg-md">
+                        <label>Branch</label>
+                        <select class="df-select" id="emp-location">
+                            <option value="">Select Branch</option>
+                        </select>
+                    </div>
+                    <div class="fg fg-sm">
+                        <label>Hire Date</label>
+                        <input class="df-input" type="date" id="emp-hire-date">
+                    </div>
+                    <div class="fg fg-sm">
+                        <label>Salary (PKR)</label>
+                        <input class="df-input" type="number" id="emp-salary" placeholder="50000">
+                    </div>
                     <div class="fg fg-btn">
                         <label style="opacity:0;">add</label>
                         <button class="btn-primary" onclick="addEmployee()">+ Add Employee</button>
@@ -402,6 +416,9 @@
                 </div>
             </div>
 
+            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                <button class="btn-ghost-sm" id="empToggleBtn" onclick="toggleEmployeeView()">👁 View Past Employees</button>
+            </div>
             <div class="df-card">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
                     <div class="df-card-title" style="margin-bottom:0;">Employee List</div>
@@ -410,8 +427,7 @@
                 <div class="df-table-wrap">
                     <table>
                         <thead>
-                            <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr>
-                        </thead>
+                            <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Branch</th><th>Hire Date</th><th>Salary</th><th>Action</th></tr>                        </thead>
                         <tbody id="empTableBody">
                             <tr><td colspan="5" class="empty-state"><div class="icon">⏳</div></td></tr>
                         </tbody>
@@ -452,7 +468,9 @@
                     </div>
                 </div>
             </div>
-
+            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                <button class="btn-ghost-sm" id="vehToggleBtn" onclick="toggleVehicleView()">👁 View Retired Vehicles</button>
+            </div>
             <div class="df-card">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
                     <div class="df-card-title" style="margin-bottom:0;">Vehicle Fleet</div>
@@ -559,6 +577,32 @@
         </div>
     </div>
 </div>
+<div class="modal-overlay" id="editEmpModal">
+    <div class="modal-box">
+        <div class="modal-title">Edit Employee Details</div>
+        <input type="hidden" id="edit-emp-id">
+        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.5rem;">
+            <div>
+                <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Branch</label>
+                <select class="df-input" id="edit-emp-location" style="margin-top:0.3rem;">
+                    <option value="">Select Branch</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Hire Date</label>
+                <input class="df-input" type="date" id="edit-emp-hire-date" style="margin-top:0.3rem;">
+            </div>
+            <div>
+                <label style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Salary (PKR)</label>
+                <input class="df-input" type="number" id="edit-emp-salary" placeholder="50000" style="margin-top:0.3rem;">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-cancel" onclick="document.getElementById('editEmpModal').classList.remove('open')">Cancel</button>
+            <button class="btn-primary" onclick="saveEmpDetails()">Save Changes</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const API = 'http://localhost:5000';
@@ -595,7 +639,7 @@
         if (btn) btn.classList.add('active');
 
         if (name === 'dashboard')  loadDashboard();
-        if (name === 'employees')  loadEmployees();
+        if (name === 'employees')  { loadEmployees(); loadEmpLocationsDropdown(); }
         if (name === 'vehicles')   { loadVehicles(); loadLocationsDropdown(); }
         if (name === 'activity')   { loadBackupLog(); loadDocActivity(); }
         if (name === 'report')     loadReport();
@@ -619,34 +663,65 @@
     }
 
     // ── EMPLOYEES ──
+    let showingPastEmployees = false;
+
+    function toggleEmployeeView() {
+        showingPastEmployees = !showingPastEmployees;
+        document.getElementById('empToggleBtn').textContent = showingPastEmployees ? '👥 View Active Employees' : '👁 View Past Employees';
+        loadEmployees();
+    }
+
     async function loadEmployees() {
         const tbody = document.getElementById('empTableBody');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res  = await fetch(`${API}/admin/employees`);
+            const url = showingPastEmployees ? `${API}/admin/employees?active=0` : `${API}/admin/employees`;
+            const res  = await fetch(url);
             const data = await res.json();
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">No employees found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">${showingPastEmployees ? 'No past employees.' : 'No employees found.'}</td></tr>`;
                 return;
             }
             tbody.innerHTML = data.map(e => `
                 <tr>
                     <td><small style="color:var(--muted);">#${e.user_id}</small></td>
-                    <td><strong>${e.full_name}</strong></td>
+                    <td><strong>${e.full_name}</strong> ${showingPastEmployees ? '<span class="badge badge-danger">Inactive</span>' : ''}</td>
                     <td style="color:var(--muted);">${e.email}</td>
                     <td style="color:var(--muted);">${e.phone_number || '—'}</td>
-                    <td><button class="btn-danger-sm" onclick="confirmDelete('employee', ${e.user_id}, '${e.full_name}')">🗑 Remove</button></td>
+                    <td>${e.branch_name || '—'}</td>
+                    <td style="color:var(--muted);">${e.hire_date ? new Date(e.hire_date).toLocaleDateString() : '—'}</td>
+                    <td>${e.salary ? 'PKR ' + Number(e.salary).toLocaleString() : '—'}</td>
+                    <td style="display:flex;gap:0.4rem;">
+                        ${showingPastEmployees ? '—' : `
+                            <button class="btn-ghost-sm" onclick="openEditEmployee(${e.user_id}, ${e.location_id || null}, '${e.hire_date || ''}', '${e.salary || ''}')">✏️ Edit</button>
+                            <button class="btn-danger-sm" onclick="confirmDelete('employee', ${e.user_id}, '${e.full_name}')">🗑 Remove</button>
+                        `}
+                    </td>
                 </tr>`).join('');
         } catch(e) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
 
+    async function loadEmpLocationsDropdown() {
+        try {
+            const res  = await fetch(`${API}/locations`);
+            const locs = await res.json();
+            const sel  = document.getElementById('emp-location');
+            sel.innerHTML = '<option value="">Select Branch</option>';
+            locs.forEach(l => sel.innerHTML += `<option value="${l.location_id}">${l.branch_name}</option>`);
+        } catch(e) {}
+    }
+
+    // Update addEmployee() to include the new fields
     async function addEmployee() {
-        const name     = document.getElementById('emp-name').value.trim();
-        const email    = document.getElementById('emp-email').value.trim();
-        const phone    = document.getElementById('emp-phone').value.trim();
-        const password = document.getElementById('emp-password').value.trim();
+        const name      = document.getElementById('emp-name').value.trim();
+        const email     = document.getElementById('emp-email').value.trim();
+        const phone     = document.getElementById('emp-phone').value.trim();
+        const password  = document.getElementById('emp-password').value.trim();
+        const location  = document.getElementById('emp-location').value;
+        const hireDate  = document.getElementById('emp-hire-date').value;
+        const salary    = document.getElementById('emp-salary').value;
         if (!name || !email || !password) { showToast('Name, email and password are required.', 'warning'); return; }
 
         showLoading(true);
@@ -654,47 +729,60 @@
             const res  = await fetch(`${API}/admin/employees`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ full_name: name, email, phone_number: phone, password })
+                body: JSON.stringify({
+                    full_name: name, email, phone_number: phone, password,
+                    location_id: location || null,
+                    hire_date:   hireDate || null,
+                    salary:      salary   || null
+                })
             });
             const data = await res.json();
             if (res.ok) {
                 showToast('Employee added successfully!', 'success');
-                ['emp-name','emp-email','emp-phone','emp-password'].forEach(id => document.getElementById(id).value = '');
+                ['emp-name','emp-email','emp-phone','emp-password','emp-hire-date','emp-salary'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('emp-location').value = '';
                 loadEmployees();
             } else { showToast(data.message || 'Failed to add employee.', 'danger'); }
         } catch(e) { showToast('Server error.', 'danger'); }
         showLoading(false);
     }
-
     // ── VEHICLES ──
+    let showingPastVehicles = false;
+
+    function toggleVehicleView() {
+        showingPastVehicles = !showingPastVehicles;
+        document.getElementById('vehToggleBtn').textContent = showingPastVehicles ? '🚗 View Active Fleet' : '👁 View Retired Vehicles';
+        loadVehicles();
+    }
+
     async function loadVehicles() {
         const tbody = document.getElementById('vehicleTableBody');
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem;">Loading...</td></tr>';
         try {
-            const res  = await fetch(`${API}/admin/vehicles`);
+            const url = showingPastVehicles ? `${API}/admin/vehicles?active=0` : `${API}/admin/vehicles`;
+            const res  = await fetch(url);
             const data = await res.json();
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem;">No vehicles found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem;">${showingPastVehicles ? 'No retired vehicles.' : 'No vehicles found.'}</td></tr>`;
                 return;
             }
             const statusMap = { Available:'badge-success', Rented:'badge-indigo', Maintenance:'badge-warning', Cleaning:'badge-muted' };
             tbody.innerHTML = data.map(v => `
                 <tr>
                     <td><small style="color:var(--muted);">#${v.vehicle_id}</small></td>
-                    <td><strong>${v.make} ${v.model}</strong></td>
+                    <td><strong>${v.make} ${v.model}</strong> ${showingPastVehicles ? '<span class="badge badge-danger">Retired</span>' : ''}</td>
                     <td>${v.color || '—'}</td>
                     <td>${v.year || '—'}</td>
                     <td>${v.category || '—'}</td>
                     <td><code>${v.license_plate || '—'}</code></td>
                     <td>PKR ${Number(v.daily_rate||0).toFixed(0)}</td>
                     <td><span class="badge ${statusMap[v.status]||'badge-muted'}">${v.status}</span></td>
-                    <td><button class="btn-danger-sm" onclick="confirmDelete('vehicle', ${v.vehicle_id}, '${v.make} ${v.model}')">🗑 Remove</button></td>
+                    <td>${showingPastVehicles ? '—' : `<button class="btn-danger-sm" onclick="confirmDelete('vehicle', ${v.vehicle_id}, '${v.make} ${v.model}')">🗑 Remove</button>`}</td>
                 </tr>`).join('');
         } catch(e) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
     }
-
     async function loadLocationsDropdown() {
         try {
             const res  = await fetch(`${API}/locations`);
@@ -843,6 +931,45 @@
         } catch(e) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--danger);padding:2rem;">Failed to load.</td></tr>';
         }
+    }
+    async function openEditEmployee(id, locationId, hireDate, salary) {
+        document.getElementById('edit-emp-id').value       = id;
+        document.getElementById('edit-emp-hire-date').value = hireDate ? hireDate.split('T')[0] : '';
+        document.getElementById('edit-emp-salary').value    = salary || '';
+
+        // Populate branch dropdown
+        try {
+            const res  = await fetch(`${API}/locations`);
+            const locs = await res.json();
+            const sel  = document.getElementById('edit-emp-location');
+            sel.innerHTML = '<option value="">Select Branch</option>';
+            locs.forEach(l => sel.innerHTML += `<option value="${l.location_id}" ${l.location_id == locationId ? 'selected' : ''}>${l.branch_name}</option>`);
+        } catch(e) {}
+
+        document.getElementById('editEmpModal').classList.add('open');
+    }
+
+    async function saveEmpDetails() {
+        const id       = document.getElementById('edit-emp-id').value;
+        const location = document.getElementById('edit-emp-location').value;
+        const hireDate = document.getElementById('edit-emp-hire-date').value;
+        const salary   = document.getElementById('edit-emp-salary').value;
+
+        showLoading(true);
+        try {
+            const res  = await fetch(`${API}/admin/employees/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ location_id: location || null, hire_date: hireDate || null, salary: salary || null })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('Details updated.', 'success');
+                document.getElementById('editEmpModal').classList.remove('open');
+                loadEmployees();
+            } else { showToast(data.message || 'Update failed.', 'danger'); }
+        } catch(e) { showToast('Server error.', 'danger'); }
+        showLoading(false);
     }
 
     // Init

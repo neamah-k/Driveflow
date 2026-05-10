@@ -261,12 +261,43 @@ app.post('/documents', upload.single('documentFile'), (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded." });
 
     const filePath = 'uploads/' + req.file.filename;
+    const docNum   = document_number || doc_value || null;
 
-    const sql = "INSERT INTO Documents (user_id, document_type, document_number, expiry_date, file_path, verification_status) VALUES (?, ?, ?, ?, ?, 'Pending')";
-   db.query(sql, [user_id, document_type, document_number || doc_value || null, expiry_date, filePath], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json({ message: "File uploaded successfully!", path: filePath });
-    });
+    // Check if this user already has a document of this type
+    db.query(
+        `SELECT document_id FROM Documents WHERE user_id = ? AND document_type = ? LIMIT 1`,
+        [user_id, document_type],
+        (err, existing) => {
+            if (err) return res.status(500).json(err);
+
+            if (existing.length > 0) {
+                // Already exists — update it and reset verification to Pending
+                const sql = `
+                    UPDATE Documents
+                    SET document_number     = ?,
+                        expiry_date         = ?,
+                        file_path           = ?,
+                        verification_status = 'Pending',
+                        verified_by         = NULL
+                    WHERE document_id = ?
+                `;
+                db.query(sql, [docNum, expiry_date, filePath, existing[0].document_id], (err2) => {
+                    if (err2) return res.status(500).json(err2);
+                    res.json({ message: "Document updated and reset to Pending review.", path: filePath });
+                });
+            } else {
+                // First time — insert fresh
+                const sql = `
+                    INSERT INTO Documents (user_id, document_type, document_number, expiry_date, file_path, verification_status)
+                    VALUES (?, ?, ?, ?, ?, 'Pending')
+                `;
+                db.query(sql, [user_id, document_type, docNum, expiry_date, filePath], (err2) => {
+                    if (err2) return res.status(500).json(err2);
+                    res.json({ message: "Document uploaded successfully.", path: filePath });
+                });
+            }
+        }
+    );
 });
 
 // --- LOCATIONS ---
@@ -585,33 +616,65 @@ app.get('/admin/stats', (req, res) => {
  
 // GET all employees
 app.get('/admin/employees', (req, res) => {
-    const sql = `SELECT user_id, full_name, email, phone_number FROM Users WHERE role = 'Employee' ORDER BY user_id DESC`;
+    const activeOnly = req.query.active !== '0';
+    const sql = `
+        SELECT u.user_id, u.full_name, u.email, u.phone_number, u.is_active,
+               ed.salary, ed.hire_date, ed.location_id, l.branch_name
+        FROM Users u
+        LEFT JOIN employee_details ed ON ed.user_id = u.user_id
+        LEFT JOIN Locations l ON l.location_id = ed.location_id
+        WHERE u.role = 'Employee' ${activeOnly ? 'AND u.is_active = 1' : 'AND u.is_active = 0'}
+        ORDER BY u.user_id DESC
+    `;    
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ message: 'Error fetching employees', error: err });
         res.json(results);
     });
 });
+
+
  
 // POST add new employee
 app.post('/admin/employees', (req, res) => {
-    const { full_name, email, password, phone_number } = req.body;
+    const { full_name, email, password, phone_number, location_id, hire_date, salary } = req.body;
     if (!full_name || !email || !password)
         return res.status(400).json({ message: 'full_name, email, and password are required.' });
- 
-    const sql = `INSERT INTO Users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, 'Employee', ?)`;
-    db.query(sql, [full_name, email, password, phone_number || null], (err, result) => {
+
+    const userSql = `INSERT INTO Users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, 'Employee', ?)`;
+    db.query(userSql, [full_name, email, password, phone_number || null], (err, result) => {
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Email already registered.' });
             return res.status(500).json({ message: 'Failed to add employee', error: err });
         }
-        res.status(201).json({ message: 'Employee added successfully.', user_id: result.insertId });
+        const newUserId = result.insertId;
+        const detailSql = `INSERT INTO employee_details (user_id, location_id, hire_date, salary) VALUES (?, ?, ?, ?)`;
+        db.query(detailSql, [newUserId, location_id || null, hire_date || null, salary || null], (err2) => {
+            if (err2) return res.status(500).json({ message: 'Employee created but details failed to save.', error: err2 });
+            res.status(201).json({ message: 'Employee added successfully.', user_id: newUserId });
+        });
+    });
+});
+
+app.put('/admin/employees/:id', (req, res) => {
+    const { location_id, hire_date, salary } = req.body;
+    const sql = `
+        INSERT INTO employee_details (user_id, location_id, hire_date, salary)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            location_id = VALUES(location_id),
+            hire_date   = VALUES(hire_date),
+            salary      = VALUES(salary)
+    `;
+    db.query(sql, [req.params.id, location_id || null, hire_date || null, salary || null], (err, result) => {
+        if (err) return res.status(500).json({ message: 'Failed to update employee details', error: err });
+        res.json({ message: 'Employee details updated.' });
     });
 });
  
 // DELETE employee
 app.delete('/admin/employees/:id', (req, res) => {
-    db.query(`DELETE FROM Users WHERE user_id = ? AND role = 'Employee'`, [req.params.id], (err, result) => {
-        if (err) return res.status(500).json({ message: 'Failed to delete employee', error: err });
+    db.query(`UPDATE Users SET is_active = 0 WHERE user_id = ? AND role = 'Employee'`, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ message: 'Failed to remove employee', error: err });
         if (result.affectedRows === 0) return res.status(404).json({ message: 'Employee not found.' });
         res.json({ message: 'Employee removed.' });
     });
@@ -621,10 +684,12 @@ app.delete('/admin/employees/:id', (req, res) => {
  
 // GET all vehicles
 app.get('/admin/vehicles', (req, res) => {
+    const activeOnly = req.query.active !== '0';
     const sql = `
         SELECT v.*, l.branch_name
         FROM Vehicles v
         LEFT JOIN Locations l ON v.current_location_id = l.location_id
+        WHERE v.is_active = ${activeOnly ? 1 : 0}
         ORDER BY v.vehicle_id DESC
     `;
     db.query(sql, (err, results) => {
@@ -652,26 +717,16 @@ app.post('/admin/vehicles', (req, res) => {
     });
 });
  
-// DELETE vehicle (only if no bookings or maintenance logs attached)
+// DELETE vehicle 
 app.delete('/admin/vehicles/:id', (req, res) => {
-    db.query('SELECT COUNT(*) AS cnt FROM Bookings WHERE vehicle_id = ?', [req.params.id], (err, rows) => {
-        if (err) return res.status(500).json({ message: 'Check failed', error: err });
-        if (rows[0].cnt > 0)
-            return res.status(400).json({ message: 'Cannot delete — vehicle has booking history.' });
-
-        db.query('SELECT COUNT(*) AS cnt FROM MaintenanceLogs WHERE vehicle_id = ?', [req.params.id], (err2, rows2) => {
-            if (err2) return res.status(500).json({ message: 'Check failed', error: err2 });
-            if (rows2[0].cnt > 0)
-                return res.status(400).json({ message: 'Cannot delete — vehicle has maintenance history.' });
-
-            db.query('DELETE FROM Vehicles WHERE vehicle_id = ?', [req.params.id], (err3, result) => {
-                if (err3) return res.status(500).json({ message: 'Failed to delete vehicle', error: err3 });
-                if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found.' });
-                res.json({ message: 'Vehicle deleted.' });
-            });
-        });
+    db.query(`UPDATE Vehicles SET is_active = 0 WHERE vehicle_id = ?`, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ message: 'Failed to remove vehicle', error: err });
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Vehicle not found.' });
+        res.json({ message: 'Vehicle removed.' });
     });
 });
+
+
 // ── EMPLOYEE ACTIVITY ─────────────────────────────────────────
  
 // GET profile edits — only rows where an employee edited a customer account
@@ -749,9 +804,7 @@ app.get('/admin/financial-report', (req, res) => {
 });
 
 
-
-
-// ── 404 HANDLER (must be last) ────────────────────────────────
+// ERROR HANDLER 
 app.use((req, res) => {
     res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
 });
