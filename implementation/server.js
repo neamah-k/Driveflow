@@ -598,8 +598,8 @@ app.post('/employee/inspections', (req, res) => {
 app.get('/admin/stats', (req, res) => {
   const sql = `
     SELECT
-        (SELECT COUNT(*) FROM Users WHERE role = 'Employee') AS total_employees,
-        (SELECT COUNT(*) FROM Vehicles)                       AS total_vehicles,
+        (SELECT COUNT(*) FROM Users WHERE role = 'Employee' AND is_active = 1) AS total_employees,
+        (SELECT COUNT(*) FROM Vehicles WHERE is_active = 1)                       AS total_vehicles,
         (SELECT COUNT(*) FROM Users WHERE role = 'Customer') AS total_customers,
         (SELECT COUNT(*) FROM Bookings)                       AS total_bookings,
         (SELECT COALESCE(SUM(
