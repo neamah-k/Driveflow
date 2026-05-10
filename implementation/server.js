@@ -391,7 +391,8 @@ app.get('/employee/invoices', (req, res) => {
         SELECT 
             i.invoice_id, i.booking_id, i.base_amount, i.late_fees,
             i.security_deposit, i.payment_status, i.issued_at,
-            u.full_name, u.user_id,
+            u.full_name, u.email, u.user_id,
+            v.make, v.model,
             d.document_number AS license_number,
             (
                 SELECT d2.verification_status 
@@ -404,6 +405,7 @@ app.get('/employee/invoices', (req, res) => {
         FROM Invoices i
         JOIN Bookings b ON i.booking_id = b.booking_id
         JOIN Users u ON b.user_id = u.user_id
+        JOIN Vehicles v ON b.vehicle_id = v.vehicle_id
         LEFT JOIN Documents d ON d.user_id = u.user_id        
             AND d.document_type = 'Driving License'           
             AND d.verification_status = 'Verified'            
