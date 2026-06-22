@@ -8,10 +8,10 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
 
 | Interface | Link |
 |---|---|
-| Login page | `driveflow-seven.vercel.app/login.html` |
-| Customer Portal | `driveflow-seven.vercel.app/customer.html` |
-| Employee Dashboard | `driveflow-seven.vercel.app/employee.html` |
-| Admin Panel | `driveflow-seven.vercel.app/admin.html` |
+| Login page | [driveflow-seven.vercel.app/login.html](driveflow-seven.vercel.app/login.html) |
+| Customer Portal | [driveflow-seven.vercel.app/customer.html](driveflow-seven.vercel.app/customer.html) |
+| Employee Dashboard | [driveflow-seven.vercel.app/employee.html](driveflow-seven.vercel.app/employee.html) |
+| Admin Panel | [driveflow-seven.vercel.app/admin.html](driveflow-seven.vercel.app/admin.html) |
 
 > The live demo is a static frontend showcase. The backend source code is available in this repository.
 
