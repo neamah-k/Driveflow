@@ -41,10 +41,9 @@ db.connect((err) => {
 });
 
 
-// ── MULTER (File Upload) ──────────────────────────────────────
-// Ensure uploads folder exists
+//  MULTER LIBRARY (File Upload) 
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
+if (!fs.existsSync(uploadDir)) {//ensure uploads folder exists
     fs.mkdirSync(uploadDir);
 }
 
@@ -61,8 +60,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
-// ── ROUTES ────────────────────────────────────────────────────
-
+// ── ROUTES 
 app.get('/vehicles', (req, res) => {
     db.query('SELECT * FROM Vehicles', (err, results) => {
         if (err) return res.status(500).json(err);
@@ -104,7 +102,8 @@ app.post('/bookings', (req, res) => {
     if (isNaN(pickupMs) || isNaN(returnMs)) return res.status(400).json({ message: "Invalid date format" });
     if (returnMs <= pickupMs) return res.status(400).json({ message: "Return date must be after pickup date" });
 
-    const checkOverlap = `SELECT * FROM Bookings WHERE vehicle_id = ? AND status != 'Cancelled' AND NOT (return_date <= ? OR pickup_date >= ?)`;
+    const checkOverlap = `SELECT * FROM Bookings 
+                        WHERE vehicle_id = ? AND status != 'Cancelled' AND NOT (return_date <= ? OR pickup_date >= ?)`;
 
     db.query(checkOverlap, [vehicle_id, pickup_date, return_date], (err, overlapResults) => {
         if (err) return res.status(500).json({ message: "Overlap check failed", error: err });
@@ -172,7 +171,9 @@ app.post('/login', (req, res) => {
 
 // --- MY BOOKINGS ---
 app.get('/my-bookings/:user_id', (req, res) => {
-    const sql = "SELECT * FROM CustomerBookingSummary WHERE user_id = ? ORDER BY pickup_date DESC";
+    const sql = `SELECT * FROM CustomerBookingSummary
+                 WHERE user_id = ? 
+                 ORDER BY pickup_date DESC`;
     db.query(sql, [req.params.user_id], (err, results) => {
         if (err) return res.status(500).json({ message: "Error fetching trips" });
         res.json(results);
@@ -181,7 +182,10 @@ app.get('/my-bookings/:user_id', (req, res) => {
 
 // --- USER PROFILE ---
 app.get('/user/:user_id', (req, res) => {
-    const sql = "SELECT * FROM CustomerDetails WHERE user_id = ? ORDER BY document_id DESC LIMIT 1";
+    const sql = `SELECT * FROM CustomerDetails 
+                WHERE user_id = ? 
+                ORDER BY document_id DESC 
+                LIMIT 1`;  //only 1 user selected
     db.query(sql, [req.params.user_id], (err, results) => {
         if (err) return res.status(500).json(err);
         if (results.length === 0) return res.status(404).json({ message: "User not found" });
@@ -271,7 +275,7 @@ app.post('/documents', upload.single('documentFile'), (req, res) => {
             if (err) return res.status(500).json(err);
 
             if (existing.length > 0) {
-                // Already exists — update it and reset verification to Pending
+                // already exists — update it and reset verification to Pending
                 const sql = `
                     UPDATE Documents
                     SET document_number     = ?,
@@ -334,8 +338,7 @@ app.get('/employee/documents', (req, res) => {
         JOIN Users u ON d.user_id = u.user_id
     `;
 
-    // ← ADD THIS BLOCK
-    if (status && status !== 'all') {
+    if (status && status !== 'all') { //for specific filtering
         sql += ` WHERE d.verification_status = ${db.escape(status)}`;
     }
 
@@ -506,7 +509,7 @@ app.get('/employee/inspections', (req, res) => {
     });
 });
 
-// GET BOOKINGS BY STATUS (used by employee.html Check-Out / Check-In tabs)
+// GET BOOKINGS BY STATUS (Check-Out / Check-In)
 app.get('/employee/bookings', (req, res) => {
     const { status } = req.query;
 
