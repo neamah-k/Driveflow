@@ -45,10 +45,8 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
 
 ## 📸 Screenshots
 
-
+### Customer
 <table>
-
-  ### Customer
   <tr>
     <td><img src="images/customer-home.png" width="250"/></td>
     <td><img src="images/customer-booking.png" width="250"/></td>
@@ -69,8 +67,10 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
     <td align="center">Vehicle Booking</td>
     <td align="center">Edit Profile</td>
   </tr>
+</table>
 
-  ### Employee
+### Employee
+<table>
   <tr>
     <td><img src="images/employee-docs.png" width="250"/></td>
     <td><img src="images/employee-inspection.png" width="250"/></td>
@@ -81,8 +81,10 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
     <td align="center">Vehicle Inspection</td>
     <td align="center">Invoice Management</td>
   </tr>
+</table>
 
-  ### Admin
+### Admin
+<table>
   <tr>
     <td><img src="images/admin-dashboard.png" width="250"/></td>
     <td><img src="images/admin-emp.png" width="250"/></td>
@@ -94,8 +96,8 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
     <td align="center">Manage Vehicles</td>
   </tr>
   <tr>
-    <td><img src="images/admin-empact.png" width="250"/></td>
-    <td><img src="images/admin-report.png" width="250"/></td>
+    <td><img src="images/admin-empact.png" width="500"/></td>
+    <td><img src="images/admin-report.png" width="500"/></td>
   </tr>
   <tr>
     <td align="center">Employee Activity</td>
