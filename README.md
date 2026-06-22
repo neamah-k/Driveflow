@@ -232,6 +232,12 @@ nodemon server.js
 
 ---
 
+## Notes
+
+This project was built as a DBMS course project demonstrating the design and implementation of a relational database system through a real-world car rental application.
+
+---
+
 ## 👥 Team
 
 - [Neamah Khawar](https://github.com/neamah-k)
