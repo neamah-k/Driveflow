@@ -45,6 +45,17 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
 
 ## 📸 Screenshots
 
+<table>
+  <tr>
+    <td><img src="images/login.png" width="500"/></td>
+    <td><img src="images/register.png" width="500"/></td>
+  </tr>
+  <tr>
+    <td align="center">Home page / Login</td>
+    <td align="center">Registeration</td>
+  </tr>
+</table>
+
 ### Customer
 <table>
   <tr>
@@ -96,8 +107,8 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
     <td align="center">Manage Vehicles</td>
   </tr>
   <tr>
-    <td><img src="images/admin-empact.png" width="500"/></td>
-    <td><img src="images/admin-report.png" width="500"/></td>
+    <td><img src="images/admin-empact.png" width="250"/></td>
+    <td><img src="images/admin-report.png" width="250"/></td>
   </tr>
   <tr>
     <td align="center">Employee Activity</td>
