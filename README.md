@@ -234,6 +234,6 @@ nodemon server.js
 
 ## 👥 Team
 
-- Syeda Neamah
-- Pareena Kumari
-- Aila Naeem
+- [Neamah Khawar](https://github.com/neamah-k)
+- [Pareena Kumari](https://github.com/pareena26)
+- [Aila Naeem](https://github.com/ailaa159)
