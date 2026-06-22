@@ -52,7 +52,7 @@ A full-stack car rental management system built with HTML, CSS, JavaScript, Node
   </tr>
   <tr>
     <td align="center">Home page / Login</td>
-    <td align="center">Registeration</td>
+    <td align="center">Registration</td>
   </tr>
 </table>
 
