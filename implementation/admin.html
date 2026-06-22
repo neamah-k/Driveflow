@@ -606,9 +606,11 @@
 
 <script>
     const API = 'http://localhost:5000';
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
-    if (!userData || userData.role !== 'Admin') window.location.href = 'login.html';
+    // Disable the authorisation and login redirect for the deployed version
+    //const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    //if (!userData || userData.role !== 'Admin') window.location.href = 'login.html';
+    
     document.getElementById('adminNameLabel').textContent = userData.name || userData.full_name || 'Admin';
 
     function logout() { localStorage.clear(); window.location.href = 'login.html'; }

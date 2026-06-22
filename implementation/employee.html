@@ -299,9 +299,10 @@
 </div>
 
 <script>
-    const userData = JSON.parse(localStorage.getItem('user'));
-    if (!userData || userData.role !== 'Employee') window.location.href = 'login.html';
-    else document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
+    // Disable the authorisation and login redirect for the deployed version
+    // const userData = JSON.parse(localStorage.getItem('user'));
+    // if (!userData || userData.role !== 'Employee') window.location.href = 'login.html';
+    // else document.getElementById('welcomeName').innerText = `Welcome, ${userData.name}`;
 
     function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
